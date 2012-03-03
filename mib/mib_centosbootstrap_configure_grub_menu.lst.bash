@@ -56,7 +56,7 @@ chroot /mnt/mib-ebs-root ln -svf /mnt/boot/boot /
 
 kernel="$CENTOS_KERNEL_VERSION.$CENTOS_ARCH"
 boot_arch="$CENTOS_ARCH"
-boot_title="CentOS Linux release 6.2 $boot_arch, with $kernel"
+boot_title="CentOS release 6.2 (Final) $boot_arch, with $kernel"
 kernel_params="ro console=hvc0 crashkernel=auto SYSFONT=latarcyrheb-sun16 LANG=en_US.UTF-8 KEYTABLE=de-latin1-nodeadkeys"
 master_root_dev="hd0"
 master_kernel_root="/dev/xvde1"
