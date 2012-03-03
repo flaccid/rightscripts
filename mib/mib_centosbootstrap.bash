@@ -56,20 +56,36 @@ echo "# fstab - static information about the filesystems" > "$CENTOSBOOTSTRAP_CH
 # init rpm
 rpm --root "$CENTOSBOOTSTRAP_CHROOT" --initdb
 
-cd /tmp
 arch="$CENTOS_ARCH"
 if [ "$CENTOS_ARCH" = 'i686' ]; then
     arch=i386
 fi
 
 # install base centos repos pkg
+cd /tmp
 repos_rpm_url="http://mirror.centos.org/centos/6/os/$arch/Packages/centos-release-6-2.el6.centos.7.$CENTOS_ARCH.rpm"
 wget "$repos_rpm_url"
 rpm -ivh --replacepkgs --force-debian --nodeps --root "$CENTOSBOOTSTRAP_CHROOT" centos-release*rpm
 # (standard, manual)
 # cd /tmp; wget http://mirror.rightscale.com/centos/6/os/i386/archive/latest/Packages/centos-release-6-2.el6.centos.7.i686.rpm && rpm -ivH --force ./centos-release-6-2.el6.centos.7.i686.rpm
-ln -svf "$CENTOSBOOTSTRAP_CHROOT"/etc/pki /etc/pki
+mkdir -p /etc/pki
+cp -Rv "$CENTOSBOOTSTRAP_CHROOT"/etc/pki/rpm-gpg /etc/pki/
+
+# install yum + clean
 yum -y --installroot "$CENTOSBOOTSTRAP_CHROOT" install yum
+chroot "$CENTOSBOOTSTRAP_CHROOT" yum clean all
+
+## Needs before and after for logical reasons
+# resolv.conf
+host_ns="$(grep nameserver /etc/resolv.conf | head -n1)"
+echo "$host_ns" > "$CENTOSBOOTSTRAP_CHROOT/etc/resolv.conf"
+echo "nameserver    8.8.8.8" >> "$CENTOSBOOTSTRAP_CHROOT/etc/resolv.conf"
+echo "nameserver    4.2.2.1" >> "$CENTOSBOOTSTRAP_CHROOT/etc/resolv.conf"
+# fstab (initial/blank)
+echo "# fstab - static information about the filesystems" > "$CENTOSBOOTSTRAP_CHROOT/etc/fstab"
+
+# prepare target
+chroot "$CENTOSBOOTSTRAP_CHROOT" yum -y install bash		# ensure bash/sh is installed from here
 
 # base
 cat <<'EOF'> "$CENTOSBOOTSTRAP_CHROOT/etc/yum.repos.d/CentOS-Base.repo"
@@ -147,21 +163,6 @@ EOF
 #enabled=1
 #EOF
 
-chroot "$CENTOSBOOTSTRAP_CHROOT" yum clean all
-
-## Needs before and after for logical reasons
-# resolv.conf
-host_ns="$(grep nameserver /etc/resolv.conf | head -n1)"
-echo "$host_ns" > "$CENTOSBOOTSTRAP_CHROOT/etc/resolv.conf"
-echo "nameserver    8.8.8.8" >> "$CENTOSBOOTSTRAP_CHROOT/etc/resolv.conf"
-echo "nameserver    4.2.2.1" >> "$CENTOSBOOTSTRAP_CHROOT/etc/resolv.conf"
-# fstab (initial/blank)
-echo "# fstab - static information about the filesystems" > "$CENTOSBOOTSTRAP_CHROOT/etc/fstab"
-
-# prepare target
-chroot "$CENTOSBOOTSTRAP_CHROOT" yum -y install bash		# ensure bash/sh is installed from here
-
-chroot "$CENTOSBOOTSTRAP_CHROOT" rpm -ivH --replacepkgs "$repos_rpm_url"
 
 # epel repos
 # mirror list: http://mirrors.fedoraproject.org/publiclist/EPEL/
