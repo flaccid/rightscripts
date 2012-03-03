@@ -107,16 +107,17 @@ echo "nameserver    4.2.2.1" >> "$CENTOSBOOTSTRAP_CHROOT"/etc/resolv.conf
 echo "#fstab" > "$CENTOSBOOTSTRAP_CHROOT"/etc/fstab
 
 # prepare target
-chroot "$CENTOSBOOTSTRAP_CHROOT" rpm -iv --replacepkgs "$repos_rpm_url"
 chroot "$CENTOSBOOTSTRAP_CHROOT" yum -y install bash		# ensure bash/sh is installed from here
+
+chroot "$CENTOSBOOTSTRAP_CHROOT" rpm -ivH --replacepkgs "$repos_rpm_url"
 
 # epel repos
 epel_mirror="http://mirror.utexas.edu/epel"
-chroot "$CENTOSBOOTSTRAP_CHROOT" rpm -iv --replacepkgs "$epel_mirror/6/$AMI_ARCH/epel-release-6-5.noarch.rpm"
+chroot "$CENTOSBOOTSTRAP_CHROOT" rpm -ivH --replacepkgs "$epel_mirror/6/$AMI_ARCH/epel-release-6-5.noarch.rpm"
 #chroot "$CENTOSBOOTSTRAP_CHROOT" rpm -iv --replacepkgs http://dl.iuscommunity.org/pub/ius/stable/Redhat/6/i386/epel-release-6-5.noarch.rpm
 
 # ius repos
-chroot "$CENTOSBOOTSTRAP_CHROOT" rpm -iv --replacepkgs http://dl.iuscommunity.org/pub/ius/stable/Redhat/6/i386/ius-release-1.0-8.ius.el6.noarch.rpm       # IUS Community Project (IUS) repository
+chroot "$CENTOSBOOTSTRAP_CHROOT" rpm -ivH --replacepkgs "http://dl.iuscommunity.org/pub/ius/stable/Redhat/6/$arch/ius-release-1.0-10.ius.el6.noarch.rpm"       # IUS Community Project (IUS) repository
 #rm -v "$CENTOSBOOTSTRAP_CHROOT/etc/yum.repos.d/epel-testing.repo" || true
 
 # keep it updated
