@@ -23,8 +23,9 @@
 # install build requirements
 apt-get -y install yum rpm python-m2crypto
 
-: ${CENTOSBOOTSTRAP_CHROOT:=/mnt/mib.master}
 : ${CENTOS_ARCH:=`uname -m`}
+: ${CENTOS_KERNEL_VERSION:=2.6.32-220.4.2.el6.centos.plus}
+: ${CENTOSBOOTSTRAP_CHROOT:=/mnt/mib.master}
 : ${RIGHTLINK_VERSION:=5.7.14}
 
 # silently ensure proc and sysfs are unmounted
@@ -47,9 +48,10 @@ touch "$CENTOSBOOTSTRAP_CHROOT/etc/mtab"
 # resolv.conf
 host_ns="$(grep nameserver /etc/resolv.conf | head -n1)"
 echo "$host_ns" > "$CENTOSBOOTSTRAP_CHROOT/etc/resolv.conf"
+echo "nameserver    8.8.8.8" >> "$CENTOSBOOTSTRAP_CHROOT/etc/resolv.conf"
 echo "nameserver    4.2.2.1" >> "$CENTOSBOOTSTRAP_CHROOT/etc/resolv.conf"
-# fstab
-echo "#fstab" > "$CENTOSBOOTSTRAP_CHROOT/etc/fstab"
+# fstab (initial/blank)
+echo "# fstab - static information about the filesystems" > "$CENTOSBOOTSTRAP_CHROOT/etc/fstab"
 
 # init rpm
 rpm --root "$CENTOSBOOTSTRAP_CHROOT" --initdb
@@ -60,34 +62,6 @@ if [ "$CENTOS_ARCH" = 'i686' ]; then
     arch=i386
 fi
 
-# base
-cat <<'EOF'> "$CENTOSBOOTSTRAP_CHROOT/etc/yum.repos.d/CentOS-Base.repo"
-[base]
-name = none
-baseurl = http://cf-mirror.rightscale.com/centos/6/os/i386/archive/latest
- http://ec2-ap-southeast-mirror1.rightscale.com/centos/6/os/i386/archive/latest
- http://ec2-ap-southeast-mirror2.rightscale.com/centos/6/os/i386/archive/latest
- http://ec2-us-west-mirror.rightscale.com/centos/6/os/i386/archive/latest
-failovermethod=priority
-gpgcheck=1
-gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-6
-exclude=kernel kernel-devel
-enabled=1
-EOF
-
-# centosplus
-cat <<'EOF'> "$CENTOSBOOTSTRAP_CHROOT/etc/yum.repos.d/CentOS-centosplus.repo"
-#additional packages that extend functionality of existing packages
-[centosplus]
-name=CentOS-$releasever - Plus
-mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=centosplus
-baseurl=http://mirror.rightscale.com/centos/$releasever/centosplus/$basearch/
-gpgcheck=1
-gpgkey=http://mirror.centos.org/centos/RPM-GPG-KEY-CentOS-6
-includepkgs=kernel* jfsutils reiserfs-utils
-enabled=1
-EOF
-
 # install base centos repos pkg
 repos_rpm_url="http://mirror.centos.org/centos/6/os/$arch/Packages/centos-release-6-2.el6.centos.7.$CENTOS_ARCH.rpm"
 wget "$repos_rpm_url"
@@ -96,15 +70,93 @@ rpm -ivh --replacepkgs --force-debian --nodeps --root "$CENTOSBOOTSTRAP_CHROOT" 
 # cd /tmp; wget http://mirror.rightscale.com/centos/6/os/i386/archive/latest/Packages/centos-release-6-2.el6.centos.7.i686.rpm && rpm -ivH --force ./centos-release-6-2.el6.centos.7.i686.rpm
 ln -svf "$CENTOSBOOTSTRAP_CHROOT"/etc/pki /etc/pki
 yum -y --installroot "$CENTOSBOOTSTRAP_CHROOT" install yum
+
+# base
+cat <<'EOF'> "$CENTOSBOOTSTRAP_CHROOT/etc/yum.repos.d/CentOS-Base.repo"
+# CentOS-Base.repo
+#
+# The mirror system uses the connecting IP address of the client and the
+# update status of each mirror to pick mirrors that are updated to and
+# geographically close to the client.  You should use this for CentOS updates
+# unless you are manually picking other mirrors.
+#
+# If the mirrorlist= does not work for you, as a fall back you can try the 
+# remarked out baseurl= line instead.
+#
+#
+
+[base]
+name=CentOS-$releasever - Base
+mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=os
+baseurl = http://cf-mirror.rightscale.com/centos/6/os/i386/archive/latest
+ http://ec2-ap-southeast-mirror1.rightscale.com/centos/6/os/i386/archive/latest
+ http://ec2-ap-southeast-mirror2.rightscale.com/centos/6/os/i386/archive/latest
+ http://ec2-us-west-mirror.rightscale.com/centos/6/os/i386/archive/latest
+#baseurl=http://mirror.centos.org/centos/$releasever/os/$basearch/
+failovermethod=priority
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-6
+exclude=kernel kernel-devel
+
+#released updates 
+[updates]
+name=CentOS-$releasever - Updates
+mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=updates
+#baseurl=http://mirror.centos.org/centos/$releasever/updates/$basearch/
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-6
+
+#additional packages that may be useful
+[extras]
+name=CentOS-$releasever - Extras
+mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=extras
+#baseurl=http://mirror.centos.org/centos/$releasever/extras/$basearch/
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-6
+
+#additional packages that extend functionality of existing packages
+[centosplus]
+name=CentOS-$releasever - Plus
+mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=centosplus
+#baseurl=http://mirror.centos.org/centos/$releasever/centosplus/$basearch/
+gpgcheck=1
+enabled=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-6
+includepkgs=kernel* jfsutils reiserfs-utils
+
+#contrib - packages by Centos Users
+[contrib]
+name=CentOS-$releasever - Contrib
+mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=contrib
+#baseurl=http://mirror.centos.org/centos/$releasever/contrib/$basearch/
+gpgcheck=1
+enabled=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-6
+EOF
+
+# centosplus
+#cat <<'EOF'> "$CENTOSBOOTSTRAP_CHROOT/etc/yum.repos.d/CentOS-centosplus.repo"
+##additional packages that extend functionality of existing packages
+#[centosplus]
+#name=CentOS-$releasever - Plus
+#mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=centosplus
+#baseurl=http://mirror.rightscale.com/centos/$releasever/centosplus/$basearch/
+#gpgcheck=1
+#gpgkey=http://mirror.centos.org/centos/RPM-GPG-KEY-CentOS-6
+#includepkgs=kernel* jfsutils reiserfs-utils
+#enabled=1
+#EOF
+
 chroot "$CENTOSBOOTSTRAP_CHROOT" yum clean all
 
 ## Needs before and after for logical reasons
 # resolv.conf
 host_ns="$(grep nameserver /etc/resolv.conf | head -n1)"
-echo "$host_ns" > "$CENTOSBOOTSTRAP_CHROOT"/etc/resolv.conf
-echo "nameserver    4.2.2.1" >> "$CENTOSBOOTSTRAP_CHROOT"/etc/resolv.conf
-# fstab
-echo "#fstab" > "$CENTOSBOOTSTRAP_CHROOT"/etc/fstab
+echo "$host_ns" > "$CENTOSBOOTSTRAP_CHROOT/etc/resolv.conf"
+echo "nameserver    8.8.8.8" >> "$CENTOSBOOTSTRAP_CHROOT/etc/resolv.conf"
+echo "nameserver    4.2.2.1" >> "$CENTOSBOOTSTRAP_CHROOT/etc/resolv.conf"
+# fstab (initial/blank)
+echo "# fstab - static information about the filesystems" > "$CENTOSBOOTSTRAP_CHROOT/etc/fstab"
 
 # prepare target
 chroot "$CENTOSBOOTSTRAP_CHROOT" yum -y install bash		# ensure bash/sh is installed from here
@@ -112,6 +164,7 @@ chroot "$CENTOSBOOTSTRAP_CHROOT" yum -y install bash		# ensure bash/sh is instal
 chroot "$CENTOSBOOTSTRAP_CHROOT" rpm -ivH --replacepkgs "$repos_rpm_url"
 
 # epel repos
+# mirror list: http://mirrors.fedoraproject.org/publiclist/EPEL/
 epel_mirror="http://mirror.utexas.edu/epel"
 chroot "$CENTOSBOOTSTRAP_CHROOT" rpm -ivH --replacepkgs "$epel_mirror/6/$AMI_ARCH/epel-release-6-5.noarch.rpm"
 #chroot "$CENTOSBOOTSTRAP_CHROOT" rpm -iv --replacepkgs http://dl.iuscommunity.org/pub/ius/stable/Redhat/6/i386/epel-release-6-5.noarch.rpm
@@ -135,8 +188,10 @@ chroot "$CENTOSBOOTSTRAP_CHROOT" mount -t sysfs foo /sys
 # install kernel
 chroot "$CENTOSBOOTSTRAP_CHROOT" yum -y install kernel kernel-firmware abrt-addon-kerneloops kernel-devel dracut-kernel kernel-headers cpio device-mapper-multipath dmraid gzip kpartx lvm2 tar less device-mapper-event
 
-#chroot "$CENTOSBOOTSTRAP_CHROOT" depmod -ae -F /boot/System.map-2.6.32-220.2.1.el6.x86_64 2.6.32-220.2.1.el6.x86_64
-#chroot "$CENTOSBOOTSTRAP_CHROOT" dracut --force '' 2.6.32-220.2.1.el6.x86_64
+# https://forums.aws.amazon.com/thread.jspa?messageID=301214&#301214
+# https://forums.aws.amazon.com/thread.jspa?messageID=297856&#297856
+chroot "$CENTOSBOOTSTRAP_CHROOT" depmod -ae -F /boot/System.map-"$CENTOS_KERNEL_VERSION"."$CENTOS_ARCH" "$CENTOS_KERNEL_VERSION"."$CENTOS_ARCH"
+chroot "$CENTOSBOOTSTRAP_CHROOT" dracut --force '' "$CENTOS_KERNEL_VERSION"."$CENTOS_ARCH"
 
 # install grub (is not required for ec2)
 #chroot "$CENTOSBOOTSTRAP_CHROOT" yum -y install grub grubby grub diffutils redhat-logos
