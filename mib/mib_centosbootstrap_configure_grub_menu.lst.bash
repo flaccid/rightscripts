@@ -25,7 +25,9 @@
 # limitations under the License.
 
 # defaults
+: ${CENTOS_ARCH:=`uname -m`}
 : ${CENTOSBOOTSTRAP_CHROOT:=/mnt/mib.master}
+: ${CENTOS_KERNEL_VERSION:=2.6.32-220.4.2.el6.centos.plus}
 
 # evaluate inputs
 export CENTOSBOOTSTRAP_CHROOT=`eval echo $CENTOSBOOTSTRAP_CHROOT`
@@ -52,7 +54,7 @@ fi
 # symlinked boot fs mountpoint to /boot
 chroot /mnt/mib-ebs-root ln -svf /mnt/boot/boot /
 
-kernel="2.6.32-71.29.1.el6.$CENTOS_ARCH"
+kernel="$CENTOS_KERNEL_VERSION.$CENTOS_ARCH"
 boot_arch="$CENTOS_ARCH"
 boot_title="CentOS Linux release 6.0 (Final) $boot_arch, with $kernel"
 kernel_params="ro console=hvc0 crashkernel=auto SYSFONT=latarcyrheb-sun16 LANG=en_US.UTF-8 KEYTABLE=de-latin1-nodeadkeys"
@@ -72,8 +74,8 @@ cat >> "$CENTOSBOOTSTRAP_CHROOT"/boot/grub/menu.lst <<EOF
 
 title       $boot_title
 root        ($master_root_dev)
-kernel      /boot/vmlinuz-2.6.32-71.29.1.el6.$CENTOS_ARCH root=$master_kernel_root $kernel_params
-initrd      /boot/initramfs-2.6.32-71.29.1.el6.$CENTOS_ARCH.img
+kernel      /boot/vmlinuz-$kernel root=LABEL=/ $kernel_params
+initrd      /boot/initramfs-$kernel.img
 
 EOF
 
