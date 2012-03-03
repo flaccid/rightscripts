@@ -27,18 +27,21 @@ apt-get -y install yum rpm python-m2crypto
 : ${CENTOS_ARCH:=`uname -m`}
 : ${RIGHTLINK_VERSION:=5.7.14}
 
+# silently ensure proc and sysfs are unmounted
 chroot "$CENTOSBOOTSTRAP_CHROOT" umount /proc > /dev/null 2>&1 || true
 chroot "$CENTOSBOOTSTRAP_CHROOT" umount /sys > /dev/null 2>&1 || true
-rm -Rf "$CENTOSBOOTSTRAP_CHROOT/*"
-mkdir -p "$CENTOSBOOTSTRAP_CHROOT"
-mkdir -p "$CENTOSBOOTSTRAP_CHROOT"/dev
-mkdir -p "$CENTOSBOOTSTRAP_CHROOT"/proc
-mkdir -p "$CENTOSBOOTSTRAP_CHROOT"/etc
-mkdir -p "$CENTOSBOOTSTRAP_CHROOT"/sys
-mkdir -p "$CENTOSBOOTSTRAP_CHROOT"/var/lib/rpm
 
-touch "$CENTOSBOOTSTRAP_CHROOT"/etc/fstab
-touch "$CENTOSBOOTSTRAP_CHROOT"/etc/mtab
+rm -Rf "$CENTOSBOOTSTRAP_CHROOT/*"  # remove all previous straps
+mkdir -p "$CENTOSBOOTSTRAP_CHROOT"
+mkdir -p "$CENTOSBOOTSTRAP_CHROOT/dev"
+mkdir -p "$CENTOSBOOTSTRAP_CHROOT/proc"
+mkdir -p "$CENTOSBOOTSTRAP_CHROOT/etc"
+mkdir -p "$CENTOSBOOTSTRAP_CHROOT/sys"
+mkdir -p "$CENTOSBOOTSTRAP_CHROOT/var/lib/rpm"
+mkdir -p "$CENTOSBOOTSTRAP_CHROOT/etc/yum.repos.d"
+
+touch "$CENTOSBOOTSTRAP_CHROOT/etc/fstab"
+touch "$CENTOSBOOTSTRAP_CHROOT/etc/mtab"
 
 ## Needs before and after for logical reasons
 # resolv.conf
@@ -56,8 +59,6 @@ arch="$CENTOS_ARCH"
 if [ "$CENTOS_ARCH" = 'i686' ]; then
     arch=i386
 fi
-
-mkdir -p "$CENTOSBOOTSTRAP_CHROOT/etc/yum.repos.d"
 
 # base
 cat <<'EOF'> "$CENTOSBOOTSTRAP_CHROOT/etc/yum.repos.d/CentOS-Base.repo"
