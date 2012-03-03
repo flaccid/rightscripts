@@ -44,8 +44,7 @@ dd if=/dev/zero of="$image_name".img bs=1000 count=0 seek=$((1000*1000*8))	# cre
 
 # Create an ext3 filesystem inside the image file.
 echo 'Creating filesystem in image.'
-
-/sbin/mke2fs -F -j "$image_dest"/"$image_name".img
+/sbin/mke2fs -F -j -L / "$image_dest"/"$image_name".img
 
 #Mount the image file using the loop-back option, allowing you to treat the image file as if it was a standard disk drive.
 echo 'Mounting image.'
