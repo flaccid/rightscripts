@@ -110,18 +110,18 @@ echo "#fstab" > "$CENTOSBOOTSTRAP_CHROOT"/etc/fstab
 chroot "$CENTOSBOOTSTRAP_CHROOT" rpm -iv --replacepkgs "$repos_rpm_url"
 chroot "$CENTOSBOOTSTRAP_CHROOT" yum -y install bash		# ensure bash/sh is installed from here
 
-
-# epel
-chroot "$CENTOSBOOTSTRAP_CHROOT" rpm -iv --replacepkgs "http://download.fedora.redhat.com/pub/epel/6/$AMI_ARCH/epel-release-6-5.noarch.rpm"
+# epel repos
+epel_mirror="http://mirror.utexas.edu/epel"
+chroot "$CENTOSBOOTSTRAP_CHROOT" rpm -iv --replacepkgs "$epel_mirror/6/$AMI_ARCH/epel-release-6-5.noarch.rpm"
 #chroot "$CENTOSBOOTSTRAP_CHROOT" rpm -iv --replacepkgs http://dl.iuscommunity.org/pub/ius/stable/Redhat/6/i386/epel-release-6-5.noarch.rpm
 
-# ius
+# ius repos
 chroot "$CENTOSBOOTSTRAP_CHROOT" rpm -iv --replacepkgs http://dl.iuscommunity.org/pub/ius/stable/Redhat/6/i386/ius-release-1.0-8.ius.el6.noarch.rpm       # IUS Community Project (IUS) repository
 #rm -v "$CENTOSBOOTSTRAP_CHROOT/etc/yum.repos.d/epel-testing.repo" || true
 
 # keep it updated
-chroot "$CENTOSBOOTSTRAP_CHROOT" yum update
-chroot "$CENTOSBOOTSTRAP_CHROOT" yum upgrade
+chroot "$CENTOSBOOTSTRAP_CHROOT" yum -y update
+chroot "$CENTOSBOOTSTRAP_CHROOT" yum -y upgrade
 chroot "$CENTOSBOOTSTRAP_CHROOT" yum clean all
 
 # install base system
@@ -218,8 +218,8 @@ cp -v "$RS_ATTACH_DIR/yum_conf_generators.rb" "$CENTOSBOOTSTRAP_CHROOT/opt/right
 
 
 # update, upgrade packages & clean
-chroot "$CENTOSBOOTSTRAP_CHROOT" yum update
-chroot "$CENTOSBOOTSTRAP_CHROOT" yum upgrade
+chroot "$CENTOSBOOTSTRAP_CHROOT" yum -y update
+chroot "$CENTOSBOOTSTRAP_CHROOT" yum -y upgrade
 chroot "$CENTOSBOOTSTRAP_CHROOT" yum clean all
 
 #
