@@ -56,12 +56,12 @@ chroot /mnt/mib-ebs-root ln -svf /mnt/boot/boot /
 
 kernel="$CENTOS_KERNEL_VERSION.$CENTOS_ARCH"
 boot_arch="$CENTOS_ARCH"
-boot_title="CentOS Linux release 6.0 (Final) $boot_arch, with $kernel"
+boot_title="CentOS Linux release 6.2 $boot_arch, with $kernel"
 kernel_params="ro console=hvc0 crashkernel=auto SYSFONT=latarcyrheb-sun16 LANG=en_US.UTF-8 KEYTABLE=de-latin1-nodeadkeys"
 master_root_dev="hd0"
-master_kernel_root="/dev/xvda1"
+master_kernel_root="/dev/xvde1"
 ebs_root_dev="hd0,0"
-ebs_kernel_root="/dev/xvda2"
+ebs_kernel_root="/dev/xvde2"
 
 # Create /boot/grub/menu.lst with header and options only first
 cp -v "$ATTACH_DIR"/menu.lst-default_options.txt "$CENTOSBOOTSTRAP_CHROOT"/boot/grub/menu.lst
