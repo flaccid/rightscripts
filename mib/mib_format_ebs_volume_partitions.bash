@@ -27,6 +27,7 @@
 # defaults
 : ${MIB_EBS_IMAGE_VOL_DEVICE:=/dev/sdd}
 : ${MIB_EBS_IMAGE_ROOT_FSTYPE:=ext3}
+: ${MIB_EBS_IMAGE_ROOT_LABEL:=/}
 
 # Format partitions (forces by default)
 
@@ -35,15 +36,18 @@ echo "y" | mkfs.ext2 -F "$MIB_EBS_IMAGE_VOL_DEVICE"1		# /boot
 # swap resides on the 3rd and last partition
 case "$MIB_EBS_IMAGE_ROOT_FSTYPE" in
     xfs)
-                      echo "y" | mkfs.xfs -f "$MIB_EBS_IMAGE_VOL_DEVICE"2		# /
+                      apt-get -y install xfsprogs
+                      echo "y" | mkfs.xfs -f "$MIB_EBS_IMAGE_VOL_DEVICE"2		# / (root fs)
                       ;;
     ext2|ext3|ext4)  
-                      echo "y" | mkfs."$MIB_EBS_IMAGE_ROOT_FSTYPE" -F "$MIB_EBS_IMAGE_VOL_DEVICE"2		# /
+                      echo "y" | mkfs."$MIB_EBS_IMAGE_ROOT_FSTYPE" -L "$MIB_EBS_IMAGE_ROOT_LABEL" -F "$MIB_EBS_IMAGE_VOL_DEVICE"2		# / (root fs)
                       ;;
      *)
                       echo "Unsupported fs type."
                       exit 1
                       ;;
 esac
+
+echo "$MIB_EBS_IMAGE_VOL_DEVICE"'2 disklabel: '`e2label "$MIB_EBS_IMAGE_VOL_DEVICE"2`
 
 echo 'Done.'
