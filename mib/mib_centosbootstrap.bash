@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#! /bin/bash -e
 
 # RightScript: MIB: Centosbootstrap
 #
@@ -24,7 +24,9 @@
 apt-get -y install yum rpm python-m2crypto
 
 : ${CENTOSBOOTSTRAP_CHROOT:=/mnt/mib.master}
-: ${RIGHTLINK_VERSION:=5.6.28}
+: ${CENTOS_ARCH:=`uname -m`}
+: ${RIGHTLINK_VERSION:=5.7.14}
+
 chroot "$CENTOSBOOTSTRAP_CHROOT" umount /proc > /dev/null 2>&1 || true
 chroot "$CENTOSBOOTSTRAP_CHROOT" umount /sys > /dev/null 2>&1 || true
 rm -Rf "$CENTOSBOOTSTRAP_CHROOT/*"
@@ -50,10 +52,45 @@ echo "#fstab" > "$CENTOSBOOTSTRAP_CHROOT"/etc/fstab
 rpm --root "$CENTOSBOOTSTRAP_CHROOT" --initdb
 
 cd /tmp
-repos_rpm_url="http://mirror.centos.org/centos/6/os/$AMI_ARCH/Packages/centos-release-6-0.el6.centos.5.$CENTOS_ARCH.rpm"
-#repos_rpm_url="http://mirror.internode.on.net/pub/centos/6/os/$AMI_ARCH/Packages/centos-release-6-0.el6.centos.5.$CENTOS_ARCH.rpm"	# AU
+arch="$CENTOS_ARCH"
+if [ "$CENTOS_ARCH" = 'i686' ]; then
+    arch=i386
+fi
+
+# base
+cat <<'EOF'> "$CENTOSBOOTSTRAP_CHROOT/etc/yum.repos.d/CentOS-Base.repo"
+[base]
+name = none
+baseurl = http://cf-mirror.rightscale.com/centos/6/os/i386/archive/latest
+ http://ec2-ap-southeast-mirror1.rightscale.com/centos/6/os/i386/archive/latest
+ http://ec2-ap-southeast-mirror2.rightscale.com/centos/6/os/i386/archive/latest
+ http://ec2-us-west-mirror.rightscale.com/centos/6/os/i386/archive/latest
+failovermethod=priority
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-6
+exclude=kernel kernel-devel
+enabled=1
+EOF
+
+# centosplus
+cat <<'EOF'> "$CENTOSBOOTSTRAP_CHROOT/etc/yum.repos.d/CentOS-centosplus.repo"
+#additional packages that extend functionality of existing packages
+[centosplus]
+name=CentOS-$releasever - Plus
+mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=centosplus
+baseurl=http://mirror.rightscale.com/centos/$releasever/centosplus/$basearch/
+gpgcheck=1
+gpgkey=http://mirror.centos.org/centos/RPM-GPG-KEY-CentOS-6
+includepkgs=kernel* jfsutils reiserfs-utils
+enabled=1
+EOF
+
+# install base centos repos pkg
+repos_rpm_url="http://mirror.centos.org/centos/6/os/$arch/Packages/centos-release-6-2.el6.centos.7.$CENTOS_ARCH.rpm"
 wget "$repos_rpm_url"
 rpm -ivh --replacepkgs --force-debian --nodeps --root "$CENTOSBOOTSTRAP_CHROOT" centos-release*rpm
+# (standard, manual)
+# cd /tmp; wget http://mirror.rightscale.com/centos/6/os/i386/archive/latest/Packages/centos-release-6-2.el6.centos.7.i686.rpm && rpm -ivH --force ./centos-release-6-2.el6.centos.7.i686.rpm
 ln -svf "$CENTOSBOOTSTRAP_CHROOT"/etc/pki /etc/pki
 yum -y --installroot "$CENTOSBOOTSTRAP_CHROOT" install yum
 chroot "$CENTOSBOOTSTRAP_CHROOT" yum clean all
@@ -69,10 +106,17 @@ echo "#fstab" > "$CENTOSBOOTSTRAP_CHROOT"/etc/fstab
 # prepare target
 chroot "$CENTOSBOOTSTRAP_CHROOT" rpm -iv --replacepkgs "$repos_rpm_url"
 chroot "$CENTOSBOOTSTRAP_CHROOT" yum -y install bash		# ensure bash/sh is installed from here
+
+
+# epel
 chroot "$CENTOSBOOTSTRAP_CHROOT" rpm -iv --replacepkgs "http://download.fedora.redhat.com/pub/epel/6/$AMI_ARCH/epel-release-6-5.noarch.rpm"
 #chroot "$CENTOSBOOTSTRAP_CHROOT" rpm -iv --replacepkgs http://dl.iuscommunity.org/pub/ius/stable/Redhat/6/i386/epel-release-6-5.noarch.rpm
+
+# ius
 chroot "$CENTOSBOOTSTRAP_CHROOT" rpm -iv --replacepkgs http://dl.iuscommunity.org/pub/ius/stable/Redhat/6/i386/ius-release-1.0-8.ius.el6.noarch.rpm       # IUS Community Project (IUS) repository
 #rm -v "$CENTOSBOOTSTRAP_CHROOT/etc/yum.repos.d/epel-testing.repo" || true
+
+# keep it updated
 chroot "$CENTOSBOOTSTRAP_CHROOT" yum update
 chroot "$CENTOSBOOTSTRAP_CHROOT" yum upgrade
 chroot "$CENTOSBOOTSTRAP_CHROOT" yum clean all
@@ -86,6 +130,9 @@ chroot "$CENTOSBOOTSTRAP_CHROOT" mount -t sysfs foo /sys
 
 # install kernel
 chroot "$CENTOSBOOTSTRAP_CHROOT" yum -y install kernel kernel-firmware abrt-addon-kerneloops kernel-devel dracut-kernel kernel-headers cpio device-mapper-multipath dmraid gzip kpartx lvm2 tar less device-mapper-event
+
+#chroot "$CENTOSBOOTSTRAP_CHROOT" depmod -ae -F /boot/System.map-2.6.32-220.2.1.el6.x86_64 2.6.32-220.2.1.el6.x86_64
+#chroot "$CENTOSBOOTSTRAP_CHROOT" dracut --force '' 2.6.32-220.2.1.el6.x86_64
 
 # install grub (is not required for ec2)
 #chroot "$CENTOSBOOTSTRAP_CHROOT" yum -y install grub grubby grub diffutils redhat-logos
@@ -131,10 +178,10 @@ rm -Rfv "$CENTOSBOOTSTRAP_CHROOT/opt/rightscale/"											# known bug: post do
 mkdir -p "$CENTOSBOOTSTRAP_CHROOT/etc/rightscale.d"
 echo -n ec2 > "$CENTOSBOOTSTRAP_CHROOT/etc/rightscale.d/cloud"
 chroot "$CENTOSBOOTSTRAP_CHROOT" yum -y install git lsb dig bind-utils git-core
-if [ "$AMI_ARCH" = 'x86_64' ]; then
-	RIGHTLINK_VERSION='5.6.34'
-fi
-chroot "$CENTOSBOOTSTRAP_CHROOT" rpm -iv --replacepkgs "http://mirror.rightscale.com/rightlink/$RIGHTLINK_VERSION/centos/rightscale_$RIGHTLINK_VERSION-centos_5.4-$AMI_ARCH.rpm"
+#if [ "$AMI_ARCH" = 'x86_64' ]; then
+#	RIGHTLINK_VERSION='5.6.34'
+#fi
+chroot "$CENTOSBOOTSTRAP_CHROOT" rpm -iv --replacepkgs "http://mirror.rightscale.com/rightlink/$RIGHTLINK_VERSION/centos/rightscale_$RIGHTLINK_VERSION-centos_5.6-$AMI_ARCH.rpm"
 
 #
 # RightScale yum repos mirror workarounds
@@ -166,10 +213,11 @@ fi
 cp -v "$RS_ATTACH_DIR/yum_conf_generators.rb" "$CENTOSBOOTSTRAP_CHROOT/opt/rightscale/right_link/repo_conf_generators/lib/repo_conf_generators/yum_conf_generators.rb"
 #cp -v "$RS_ATTACH_DIR/rightscale_conf_generators.rb" "$CENTOSBOOTSTRAP_CHROOT/opt/rightscale/right_link/repo_conf_generators/lib/repo_conf_generators/rightscale_conf_generators.rb"
 
+
 # update, upgrade packages & clean
-yum update
-yum upgrade
-yum clean all
+chroot "$CENTOSBOOTSTRAP_CHROOT" yum update
+chroot "$CENTOSBOOTSTRAP_CHROOT" yum upgrade
+chroot "$CENTOSBOOTSTRAP_CHROOT" yum clean all
 
 #
 # Extra services
