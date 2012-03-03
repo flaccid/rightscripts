@@ -43,10 +43,10 @@ touch "$CENTOSBOOTSTRAP_CHROOT"/etc/mtab
 ## Needs before and after for logical reasons
 # resolv.conf
 host_ns="$(grep nameserver /etc/resolv.conf | head -n1)"
-echo "$host_ns" > "$CENTOSBOOTSTRAP_CHROOT"/etc/resolv.conf
-echo "nameserver    4.2.2.1" >> "$CENTOSBOOTSTRAP_CHROOT"/etc/resolv.conf
+echo "$host_ns" > "$CENTOSBOOTSTRAP_CHROOT/etc/resolv.conf"
+echo "nameserver    4.2.2.1" >> "$CENTOSBOOTSTRAP_CHROOT/etc/resolv.conf"
 # fstab
-echo "#fstab" > "$CENTOSBOOTSTRAP_CHROOT"/etc/fstab
+echo "#fstab" > "$CENTOSBOOTSTRAP_CHROOT/etc/fstab"
 
 # init rpm
 rpm --root "$CENTOSBOOTSTRAP_CHROOT" --initdb
@@ -56,6 +56,8 @@ arch="$CENTOS_ARCH"
 if [ "$CENTOS_ARCH" = 'i686' ]; then
     arch=i386
 fi
+
+mkdir -p "$CENTOSBOOTSTRAP_CHROOT/etc/yum.repos.d"
 
 # base
 cat <<'EOF'> "$CENTOSBOOTSTRAP_CHROOT/etc/yum.repos.d/CentOS-Base.repo"
