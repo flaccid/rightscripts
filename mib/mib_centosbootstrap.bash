@@ -24,7 +24,7 @@
 apt-get -y install yum rpm python-m2crypto
 
 : ${CENTOS_ARCH:=`uname -m`}
-: ${CENTOS_KERNEL_VERSION:=2.6.32-220.4.2.el6.centos.plus}
+: ${CENTOS_KERNEL_VERSION:=2.6.32-220.7.1.el6.centos.plus}
 : ${CENTOSBOOTSTRAP_CHROOT:=/mnt/mib.master}
 : ${RIGHTLINK_VERSION:=5.7.14}
 
@@ -101,35 +101,46 @@ cat <<'EOF'> "$CENTOSBOOTSTRAP_CHROOT/etc/yum.repos.d/CentOS-Base.repo"
 #
 #
 
+# note: rs mirrors are not used as these are don't mirror release 6.2
 [base]
 name=CentOS-$releasever - Base
 mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=os
-baseurl = http://cf-mirror.rightscale.com/centos/6/os/i386/archive/latest
- http://ec2-ap-southeast-mirror1.rightscale.com/centos/6/os/i386/archive/latest
- http://ec2-ap-southeast-mirror2.rightscale.com/centos/6/os/i386/archive/latest
- http://ec2-us-west-mirror.rightscale.com/centos/6/os/i386/archive/latest
 #baseurl=http://mirror.centos.org/centos/$releasever/os/$basearch/
+#baseurl = http://cf-mirror.rightscale.com/centos/6/os/i386/archive/latest
+# http://ec2-ap-southeast-mirror1.rightscale.com/centos/6/os/i386/archive/latest
+# http://ec2-ap-southeast-mirror2.rightscale.com/centos/6/os/i386/archive/latest
+# http://ec2-us-west-mirror.rightscale.com/centos/6/os/i386/archive/latest
 failovermethod=priority
+priority=1
 gpgcheck=1
 gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-6
 exclude=kernel kernel-devel
+enabled=1
+EOF
 
+cat <<'EOF'> "$CENTOSBOOTSTRAP_CHROOT/etc/yum.repos.d/CentOS-Updates.repo"
 #released updates 
 [updates]
 name=CentOS-$releasever - Updates
 mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=updates
 #baseurl=http://mirror.centos.org/centos/$releasever/updates/$basearch/
 gpgcheck=1
+enabled=1
 gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-6
+EOF
 
+cat <<'EOF'> "$CENTOSBOOTSTRAP_CHROOT/etc/yum.repos.d/CentOS-Extras.repo"
 #additional packages that may be useful
 [extras]
 name=CentOS-$releasever - Extras
 mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=extras
 #baseurl=http://mirror.centos.org/centos/$releasever/extras/$basearch/
 gpgcheck=1
+enabled=1
 gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-6
+EOF
 
+cat <<'EOF'> "$CENTOSBOOTSTRAP_CHROOT/etc/yum.repos.d/CentOS-Plus.repo"
 #additional packages that extend functionality of existing packages
 [centosplus]
 name=CentOS-$releasever - Plus
@@ -139,7 +150,9 @@ gpgcheck=1
 enabled=1
 gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-6
 includepkgs=kernel* jfsutils reiserfs-utils
+EOF
 
+cat <<'EOF'> "$CENTOSBOOTSTRAP_CHROOT/etc/yum.repos.d/CentOS-Contrib.repo"
 #contrib - packages by Centos Users
 [contrib]
 name=CentOS-$releasever - Contrib
@@ -149,20 +162,6 @@ gpgcheck=1
 enabled=1
 gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-6
 EOF
-
-# centosplus
-#cat <<'EOF'> "$CENTOSBOOTSTRAP_CHROOT/etc/yum.repos.d/CentOS-centosplus.repo"
-##additional packages that extend functionality of existing packages
-#[centosplus]
-#name=CentOS-$releasever - Plus
-#mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=centosplus
-#baseurl=http://mirror.rightscale.com/centos/$releasever/centosplus/$basearch/
-#gpgcheck=1
-#gpgkey=http://mirror.centos.org/centos/RPM-GPG-KEY-CentOS-6
-#includepkgs=kernel* jfsutils reiserfs-utils
-#enabled=1
-#EOF
-
 
 # epel repos
 # mirror list: http://mirrors.fedoraproject.org/publiclist/EPEL/
@@ -236,11 +235,8 @@ chroot "$CENTOSBOOTSTRAP_CHROOT" userdel rightscale > /dev/null 2>&1 || true				
 chroot "$CENTOSBOOTSTRAP_CHROOT" rm -Rf /home/rightscale > /dev/null 2>&1 || true			# known bug: post does not remove rightscale /home
 rm -Rfv "$CENTOSBOOTSTRAP_CHROOT/opt/rightscale/"											# known bug: post does not remove created files in /opt/rightscale
 mkdir -p "$CENTOSBOOTSTRAP_CHROOT/etc/rightscale.d"
-echo -n ec2 > "$CENTOSBOOTSTRAP_CHROOT/etc/rightscale.d/cloud"
-chroot "$CENTOSBOOTSTRAP_CHROOT" yum -y install git lsb dig bind-utils git-core
-#if [ "$AMI_ARCH" = 'x86_64' ]; then
-#	RIGHTLINK_VERSION='5.6.34'
-#fi
+echo -n ec2 > "$CENTOSBOOTSTRAP_CHROOT/etc/rightscale.d/cloud"			# only ec2 at this time
+chroot "$CENTOSBOOTSTRAP_CHROOT" yum -y install git lsb dig bind-utils git-core		# install deps manually
 chroot "$CENTOSBOOTSTRAP_CHROOT" rpm -iv --replacepkgs "http://mirror.rightscale.com/rightlink/$RIGHTLINK_VERSION/centos/rightscale_$RIGHTLINK_VERSION-centos_5.6-$AMI_ARCH.rpm"
 
 #
@@ -248,16 +244,20 @@ chroot "$CENTOSBOOTSTRAP_CHROOT" rpm -iv --replacepkgs "http://mirror.rightscale
 # (TBR after fix)
 # workaround for pending repos changes for centos6; effective disables addons and rightscale-epel by immutability (unfortunately the +i did not seem to be warranted, thus commenting out in repo_conf_generators)
 #
-# epel - wrong filename from rightlink. epel-release-6-5.noarch.rpm uses epel.repo, epel-testing.repo. RS uses Epel.repo.
-mv -fv "$CENTOSBOOTSTRAP_CHROOT/etc/yum.repos.d/epel.repo" "$CENTOSBOOTSTRAP_CHROOT/etc/yum.repos.d/Epel.repo"
-:> "$CENTOSBOOTSTRAP_CHROOT/etc/yum.repos.d/epel.repo"
-chroot "$CENTOSBOOTSTRAP_CHROOT" chattr +i /etc/yum.repos.d/epel.repo
-# addons
+## epel - make immutable (wrong filename from rightlink. epel-release-6-5.noarch.rpm uses epel.repo, epel-testing.repo. RS uses Epel.repo.)
+touch "$CENTOSBOOTSTRAP_CHROOT/etc/yum.repos.d/Epel.repo"
+:> "$CENTOSBOOTSTRAP_CHROOT/etc/yum.repos.d/Epel.repo"
+chroot "$CENTOSBOOTSTRAP_CHROOT" chattr +i /etc/yum.repos.d/Epel.repo
+## addons - make immutable
 touch "$CENTOSBOOTSTRAP_CHROOT/etc/yum.repos.d/CentOS-addons.repo" || \
 	( chroot "$CENTOSBOOTSTRAP_CHROOT" chattr -i /etc/yum.repos.d/CentOS-addons.repo && touch "$CENTOSBOOTSTRAP_CHROOT/etc/yum.repos.d/CentOS-addons.repo" )
 :> "$CENTOSBOOTSTRAP_CHROOT/etc/yum.repos.d/CentOS-addons.repo"
 chroot "$CENTOSBOOTSTRAP_CHROOT" chattr +i /etc/yum.repos.d/CentOS-addons.repo
-# Rightscale-epel  (this should be fixed now)
+## centosplus (repoconf managed filename)
+touch "$CENTOSBOOTSTRAP_CHROOT/etc/yum.repos.d/CentOS-centosplus.repo"
+:> "$CENTOSBOOTSTRAP_CHROOT/etc/yum.repos.d/CentOS-centosplus.repo"
+chroot "$CENTOSBOOTSTRAP_CHROOT" chattr +i /etc/yum.repos.d/CentOS-centosplus.repo
+## Rightscale-epel  (this should be fixed now)
 #touch "$CENTOSBOOTSTRAP_CHROOT/etc/yum.repos.d/RightScale-epel.repo" || \
 #	( chroot "$CENTOSBOOTSTRAP_CHROOT" chattr -i /etc/yum.repos.d/RightScale-epel.repo && touch "$CENTOSBOOTSTRAP_CHROOT/etc/yum.repos.d/RightScale-epel.repo" )
 #:> "$CENTOSBOOTSTRAP_CHROOT/etc/yum.repos.d/RightScale-epel.repo"
@@ -270,9 +270,9 @@ else
 	chroot "$CENTOSBOOTSTRAP_CHROOT" cp -v /usr/share/collectd/types.db /usr/lib/collectd/types.db
 fi
 # comment out the repo conf gens anyway
-cp -v "$RS_ATTACH_DIR/yum_conf_generators.rb" "$CENTOSBOOTSTRAP_CHROOT/opt/rightscale/right_link/repo_conf_generators/lib/repo_conf_generators/yum_conf_generators.rb"
-#cp -v "$RS_ATTACH_DIR/rightscale_conf_generators.rb" "$CENTOSBOOTSTRAP_CHROOT/opt/rightscale/right_link/repo_conf_generators/lib/repo_conf_generators/rightscale_conf_generators.rb"
-
+cp -v "$RS_ATTACH_DIR/repo_conf_generators.rb" "$CENTOSBOOTSTRAP_CHROOT/opt/rightscale/right_link/repo_conf_generators/lib/repo_conf_generators.rb"
+#cp -v "$RS_ATTACH_DIR/yum_conf_generators.rb" "$CENTOSBOOTSTRAP_CHROOT/opt/rightscale/right_link/repo_conf_generators/lib/repo_conf_generators/yum_conf_generators.rb"
+#cp -v "$RS_ATTACH_DIR/rightscale_conf_generators.rb" "$CENTOSBOOTSTRAP_CHROOT	repo_conf_generators/rightscale_conf_generators.rb"
 
 # update, upgrade packages & clean
 chroot "$CENTOSBOOTSTRAP_CHROOT" yum -y update
