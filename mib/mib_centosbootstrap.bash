@@ -27,6 +27,8 @@ apt-get -y install yum rpm python-m2crypto
 : ${CENTOS_KERNEL_VERSION:=2.6.32-220.7.1.el6.centos.plus}
 : ${CENTOSBOOTSTRAP_CHROOT:=/mnt/mib.master}
 : ${RIGHTLINK_VERSION:=5.7.14}
+: ${EPEL_RELEASE:=6-7}
+#: ${RIGHTLINK_PKG_URL:=}
 
 # silently ensure proc and sysfs are unmounted
 chroot "$CENTOSBOOTSTRAP_CHROOT" umount /proc > /dev/null 2>&1 || true
@@ -166,7 +168,7 @@ EOF
 # epel repos
 # mirror list: http://mirrors.fedoraproject.org/publiclist/EPEL/
 epel_mirror="http://mirror.utexas.edu/epel"
-chroot "$CENTOSBOOTSTRAP_CHROOT" rpm -ivH --replacepkgs "$epel_mirror/6/$AMI_ARCH/epel-release-6-5.noarch.rpm"
+chroot "$CENTOSBOOTSTRAP_CHROOT" rpm -ivH --replacepkgs "$epel_mirror/6/$AMI_ARCH/epel-release-$EPEL_RELEASE.noarch.rpm"
 #chroot "$CENTOSBOOTSTRAP_CHROOT" rpm -iv --replacepkgs http://dl.iuscommunity.org/pub/ius/stable/Redhat/6/i386/epel-release-6-5.noarch.rpm
 
 # ius repos
@@ -237,7 +239,13 @@ rm -Rfv "$CENTOSBOOTSTRAP_CHROOT/opt/rightscale/"											# known bug: post do
 mkdir -p "$CENTOSBOOTSTRAP_CHROOT/etc/rightscale.d"
 echo -n ec2 > "$CENTOSBOOTSTRAP_CHROOT/etc/rightscale.d/cloud"			# only ec2 at this time
 chroot "$CENTOSBOOTSTRAP_CHROOT" yum -y install git lsb dig bind-utils git-core		# install deps manually
-chroot "$CENTOSBOOTSTRAP_CHROOT" rpm -iv --replacepkgs "http://mirror.rightscale.com/rightlink/$RIGHTLINK_VERSION/centos/rightscale_$RIGHTLINK_VERSION-centos_5.6-$AMI_ARCH.rpm"
+if (test "${RIGHTLINK_PKG_URL+defined}" && [ "$RIGHTLINK_PKG_URL" != '' ]); then
+	rl_pkg_url="http://mirror.rightscale.com/rightlink/$RIGHTLINK_VERSION/centos/rightscale_$RIGHTLINK_VERSION-centos_5.6-$AMI_ARCH.rpm"
+else
+	rl_pkg_url="$RIGHTLINK_PKG_URL"
+fi
+chroot "$CENTOSBOOTSTRAP_CHROOT" rpm -iv --replacepkgs "$rl_pkg_url"
+
 
 #
 # RightScale yum repos mirror workarounds
