@@ -24,7 +24,7 @@
 apt-get -y install yum rpm python-m2crypto
 
 : ${CENTOS_ARCH:=`uname -m`}
-: ${CENTOS_KERNEL_VERSION:=2.6.32-220.7.1.el6.centos.plus}
+: ${CENTOS_KERNEL_VERSION:=2.6.32-220.17.1.el6.centos.plus}
 : ${CENTOSBOOTSTRAP_CHROOT:=/mnt/mib.master}
 : ${RIGHTLINK_VERSION:=5.7.14}
 : ${EPEL_RELEASE:=6-7}
@@ -184,8 +184,8 @@ chroot "$CENTOSBOOTSTRAP_CHROOT" yum clean all
 chroot "$CENTOSBOOTSTRAP_CHROOT" yum -y install yum rpm centos-release coreutils basesystem setup filesystem libstdc++ udev MAKEDEV chkconfig bash glibc glibc-common libgcc tzdata mktemp
 
 # mount image filesystems
-chroot "$CENTOSBOOTSTRAP_CHROOT" mount -t proc foo /proc
-chroot "$CENTOSBOOTSTRAP_CHROOT" mount -t sysfs foo /sys
+chroot "$CENTOSBOOTSTRAP_CHROOT" mount -t proc proc /proc
+chroot "$CENTOSBOOTSTRAP_CHROOT" mount -t sysfs sys /sys
 
 # install kernel
 chroot "$CENTOSBOOTSTRAP_CHROOT" yum -y install kernel kernel-firmware abrt-addon-kerneloops kernel-devel dracut-kernel kernel-headers cpio device-mapper-multipath dmraid gzip kpartx lvm2 tar less device-mapper-event
@@ -212,10 +212,10 @@ libcap db4 openssl readline bzip2-libs gdbm findutils krb5-libs initscripts util
 keyutils-libs iproute sysfsutils SysVinit net-tools module-init-tools e2fsprogs e2fsprogs-libs \
 device-mapper psmisc procps libsysfs iputils mlocate logrotate postfix openssl openssh openssh-askpass \
 openssh-clients gcc* bison flex compat-libstdc++-296 autoconf automake libtool compat-gcc-34-g77 \
-rrdtool rrdtool-devel rrdtool-doc rrdtool-perl rrdtool-python rrdtool-ruby rrdtool-tcl libuser openldap cyrus-sasl-lib kbd usermode
+rrdtool rrdtool-devel rrdtool-doc rrdtool-perl rrdtool-python rrdtool-ruby rrdtool-tcl libuser openldap cyrus-sasl-lib kbd usermode sudo
 
 # install extra base cli tools
-chroot "$CENTOSBOOTSTRAP_CHROOT" yum -y install wget curl which screen grep lynx links zip unzip mutt sed
+chroot "$CENTOSBOOTSTRAP_CHROOT" yum -y install wget curl which screen grep lynx links elinks zip unzip mutt sed
 
 # install vcs packages
 chroot "$CENTOSBOOTSTRAP_CHROOT" yum -y install cvs subversion git mercurial
@@ -224,7 +224,7 @@ chroot "$CENTOSBOOTSTRAP_CHROOT" yum -y install cvs subversion git mercurial
 chroot "$CENTOSBOOTSTRAP_CHROOT" yum -y install vim-minimal vim-enhanced vim-common nano joe
 
 # install languages
-chroot "$CENTOSBOOTSTRAP_CHROOT" yum -y install python ruby ruby-devel ruby-docs ruby-irb ruby-libs ruby-mode ruby-rdoc ruby-ri ruby-tcltk bash
+chroot "$CENTOSBOOTSTRAP_CHROOT" yum -y install python ruby rubygems ruby-devel ruby-docs ruby-irb ruby-libs ruby-mode ruby-rdoc ruby-ri ruby-tcltk bash
 
 # install rootfiles
 chroot "$CENTOSBOOTSTRAP_CHROOT" yum -y install rootfiles
