@@ -246,6 +246,11 @@ else
 fi
 chroot "$CENTOSBOOTSTRAP_CHROOT" rpm -iv --replacepkgs "$rl_pkg_url"
 
+# install rightimage service
+wget -q -O "$CENTOSBOOTSTRAP_CHROOT/etc/init.d/rightimage" https://raw.github.com/rightscale/rightimage/master/cookbooks/rightimage/files/default/rightimage
+chmod +x "$CENTOSBOOTSTRAP_CHROOT/etc/init.d/rightimage"
+chroot "$CENTOSBOOTSTRAP_CHROOT" update-rc.d rightimage defaults
+
 
 #
 # RightScale yum repos mirror workarounds
