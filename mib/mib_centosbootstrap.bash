@@ -251,6 +251,10 @@ wget -q -O "$CENTOSBOOTSTRAP_CHROOT/etc/init.d/rightimage" https://raw.github.co
 chmod +x "$CENTOSBOOTSTRAP_CHROOT/etc/init.d/rightimage"
 chroot "$CENTOSBOOTSTRAP_CHROOT" update-rc.d rightimage defaults
 
+# quick sudo setup for rightscale users (usually not needed)
+if ! grep rightscale "$CENTOSBOOTSTRAP_CHROOT/etc/sudoers"; then
+	echo "%rightscale    ALL=(ALL)    NOPASSWD: ALL" >> "$CENTOSBOOTSTRAP_CHROOT/etc/sudoers"
+fi
 
 #
 # RightScale yum repos mirror workarounds
