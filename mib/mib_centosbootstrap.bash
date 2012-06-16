@@ -34,7 +34,7 @@ apt-get -y install yum rpm python-m2crypto
 chroot "$CENTOSBOOTSTRAP_CHROOT" umount /proc > /dev/null 2>&1 || true
 chroot "$CENTOSBOOTSTRAP_CHROOT" umount /sys > /dev/null 2>&1 || true
 
-rm -Rf "$CENTOSBOOTSTRAP_CHROOT/*"  # remove all previous straps
+rm -Rf "$CENTOSBOOTSTRAP_CHROOT"/*  # remove all previous straps
 mkdir -p "$CENTOSBOOTSTRAP_CHROOT"
 mkdir -p "$CENTOSBOOTSTRAP_CHROOT/dev"
 mkdir -p "$CENTOSBOOTSTRAP_CHROOT/proc"
@@ -249,7 +249,7 @@ chroot "$CENTOSBOOTSTRAP_CHROOT" rpm -iv --replacepkgs "$rl_pkg_url"
 # install rightimage service
 wget -q -O "$CENTOSBOOTSTRAP_CHROOT/etc/init.d/rightimage" https://raw.github.com/rightscale/rightimage/master/cookbooks/rightimage/files/default/rightimage
 chmod +x "$CENTOSBOOTSTRAP_CHROOT/etc/init.d/rightimage"
-chroot "$CENTOSBOOTSTRAP_CHROOT" update-rc.d rightimage defaults
+chroot "$CENTOSBOOTSTRAP_CHROOT" /sbin/chkconfig --add rightimage
 
 # quick sudo setup for rightscale users (usually not needed)
 if ! grep rightscale "$CENTOSBOOTSTRAP_CHROOT/etc/sudoers"; then
@@ -286,8 +286,8 @@ if [ "$AMI_ARCH" = 'x86_64' ]; then
 else
 	chroot "$CENTOSBOOTSTRAP_CHROOT" cp -v /usr/share/collectd/types.db /usr/lib/collectd/types.db
 fi
-# comment out the repo conf gens anyway
-cp -v "$RS_ATTACH_DIR/repo_conf_generators.rb" "$CENTOSBOOTSTRAP_CHROOT/opt/rightscale/right_link/repo_conf_generators/lib/repo_conf_generators.rb"
+# comment out the repo conf gens anyway (should be fixed >= 5.7.17)
+#cp -v "$RS_ATTACH_DIR/repo_conf_generators.rb" "$CENTOSBOOTSTRAP_CHROOT/opt/rightscale/right_link/repo_conf_generators/lib/repo_conf_generators.rb"
 #cp -v "$RS_ATTACH_DIR/yum_conf_generators.rb" "$CENTOSBOOTSTRAP_CHROOT/opt/rightscale/right_link/repo_conf_generators/lib/repo_conf_generators/yum_conf_generators.rb"
 #cp -v "$RS_ATTACH_DIR/rightscale_conf_generators.rb" "$CENTOSBOOTSTRAP_CHROOT	repo_conf_generators/rightscale_conf_generators.rb"
 
