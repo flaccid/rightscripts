@@ -34,25 +34,12 @@ export CENTOSBOOTSTRAP_CHROOT=`eval echo $CENTOSBOOTSTRAP_CHROOT`
 
 # make /boot/grub folder if not existing (grub install is not required)
 mkdir -p "$CENTOSBOOTSTRAP_CHROOT"/boot/grub
-mkdir -p /mnt/mib-ebs-boot/boot/grub
 
 # backup menu.lst if exists
 if [ -e "$CENTOSBOOTSTRAP_CHROOT"/boot/grub/menu.lst ]; then
 	echo 'Backing up existing menu.lst.'
 	mv -v "$CENTOSBOOTSTRAP_CHROOT"/boot/grub/menu.lst "$CENTOSBOOTSTRAP_CHROOT"/boot/grub/menu.lst.backup-build
 fi
-
-# ensure boot mountpoint exists root partition
-mkdir -p /mnt/mib-ebs-root/mnt/boot
-
-# remove boot directory from root (if exists)
-if [ -e /mnt/mib-ebs-root/boot ]; then
-	echo 'Removing existing boot directory from root partition'
-	rm -Rfv /mnt/mib-ebs-root/boot
-fi
-
-# symlinked boot fs mountpoint to /boot
-chroot /mnt/mib-ebs-root ln -svf /mnt/boot/boot /
 
 kernel="$CENTOS_KERNEL_VERSION.$CENTOS_ARCH"
 boot_arch="$CENTOS_ARCH"
@@ -61,10 +48,15 @@ kernel_params="ro console=hvc0 crashkernel=auto SYSFONT=latarcyrheb-sun16 LANG=e
 master_root_dev="hd0"
 master_kernel_root="/dev/xvde1"
 ebs_root_dev="hd0,0"
-ebs_kernel_root="/dev/xvde2"
+ebs_kernel_root="/dev/xvde1"
 
 # Create /boot/grub/menu.lst with header and options only first
 cp -v "$ATTACH_DIR"/menu.lst-default_options.txt "$CENTOSBOOTSTRAP_CHROOT"/boot/grub/menu.lst
+
+cat >> "$CENTOSBOOTSTRAP_CHROOT"/boot/grub/device.map <<EOF
+(hd0)     /dev/sda
+
+EOF
 
 #
 # menu.list (master)
@@ -79,20 +71,14 @@ initrd      /boot/initramfs-$kernel.img
 
 EOF
 
-cat >> "$CENTOSBOOTSTRAP_CHROOT"/boot/grub/device.map <<EOF
-(hd0)     /dev/sda
-
-EOF
-
 #
 # menu.lst (EBS)
 #
 # copy master menu.lst to ebs volume
-cp -v "$CENTOSBOOTSTRAP_CHROOT"/boot/grub/menu.lst /mnt/mib-ebs-boot/boot/grub/menu.lst
-
+cp -v "$CENTOSBOOTSTRAP_CHROOT"/boot/grub/menu.lst /mnt/mib-ebs-root/boot/grub/menu.lst
 # change the root device and kernel root in ebs menu.lst
-sed -i "s%$master_root_dev%$ebs_root_dev%" /mnt/mib-ebs-boot/boot/grub/menu.lst
-sed -i "s%$master_kernel_root%$ebs_kernel_root%" /mnt/mib-ebs-boot/boot/grub/menu.lst
+sed -i "s%$master_root_dev%$ebs_root_dev%" /mnt/mib-ebs-root/boot/grub/menu.lst
+sed -i "s%$master_kernel_root%$ebs_kernel_root%" /mnt/mib-ebs-root/boot/grub/menu.lst
 
 echo 'Showing files.'
 echo
@@ -103,7 +89,7 @@ echo '--'
 echo
 echo 'EBS AMI menu.lst:'
 echo '--'
-cat /mnt/mib-ebs-boot/boot/grub/menu.lst
+cat /mnt/mib-ebs-root/boot/grub/menu.lst
 echo '--'
 echo
 
