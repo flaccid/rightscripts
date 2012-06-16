@@ -30,11 +30,12 @@ apt-get -y install yum rpm python-m2crypto
 : ${EPEL_RELEASE:=6-7}
 #: ${RIGHTLINK_PKG_URL:=}
 
-# silently ensure proc and sysfs are unmounted
+# silently ensure proc and sysfs are unmounted and remove all previous straps
 chroot "$CENTOSBOOTSTRAP_CHROOT" umount /proc > /dev/null 2>&1 || true
 chroot "$CENTOSBOOTSTRAP_CHROOT" umount /sys > /dev/null 2>&1 || true
+rm -Rf "$CENTOSBOOTSTRAP_CHROOT"/* > /dev/null 2>&1 || true
 
-rm -Rf "$CENTOSBOOTSTRAP_CHROOT"/*  # remove all previous straps
+# create folders in root of image
 mkdir -p "$CENTOSBOOTSTRAP_CHROOT"
 mkdir -p "$CENTOSBOOTSTRAP_CHROOT/dev"
 mkdir -p "$CENTOSBOOTSTRAP_CHROOT/proc"
@@ -43,6 +44,7 @@ mkdir -p "$CENTOSBOOTSTRAP_CHROOT/sys"
 mkdir -p "$CENTOSBOOTSTRAP_CHROOT/var/lib/rpm"
 mkdir -p "$CENTOSBOOTSTRAP_CHROOT/etc/yum.repos.d"
 
+# ensure fstab and mtab exist
 touch "$CENTOSBOOTSTRAP_CHROOT/etc/fstab"
 touch "$CENTOSBOOTSTRAP_CHROOT/etc/mtab"
 
@@ -286,8 +288,8 @@ if [ "$AMI_ARCH" = 'x86_64' ]; then
 else
 	chroot "$CENTOSBOOTSTRAP_CHROOT" cp -v /usr/share/collectd/types.db /usr/lib/collectd/types.db
 fi
-# comment out the repo conf gens anyway (should be fixed >= 5.7.17)
-#cp -v "$RS_ATTACH_DIR/repo_conf_generators.rb" "$CENTOSBOOTSTRAP_CHROOT/opt/rightscale/right_link/repo_conf_generators/lib/repo_conf_generators.rb"
+# comment out the repo conf gens anyway (should be fixed > 5.7.17, need 5.8)
+cp -v "$RS_ATTACH_DIR/repo_conf_generators.rb" "$CENTOSBOOTSTRAP_CHROOT/opt/rightscale/right_link/repo_conf_generators/lib/repo_conf_generators.rb"
 #cp -v "$RS_ATTACH_DIR/yum_conf_generators.rb" "$CENTOSBOOTSTRAP_CHROOT/opt/rightscale/right_link/repo_conf_generators/lib/repo_conf_generators/yum_conf_generators.rb"
 #cp -v "$RS_ATTACH_DIR/rightscale_conf_generators.rb" "$CENTOSBOOTSTRAP_CHROOT	repo_conf_generators/rightscale_conf_generators.rb"
 
