@@ -34,6 +34,7 @@ export CENTOSBOOTSTRAP_CHROOT=`eval echo $CENTOSBOOTSTRAP_CHROOT`
 
 # make /boot/grub folder if not existing (grub install is not required)
 mkdir -p "$CENTOSBOOTSTRAP_CHROOT"/boot/grub
+mkdir -p /mnt/mib-ebs-root/boot/grub
 
 # backup menu.lst if exists
 if [ -e "$CENTOSBOOTSTRAP_CHROOT"/boot/grub/menu.lst ]; then
