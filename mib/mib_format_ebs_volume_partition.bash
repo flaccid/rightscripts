@@ -1,8 +1,8 @@
 #!/bin/bash -ex
 
-# RightScript: MIB: Format EBS volume partitions
+# RightScript: MIB: Format EBS volume partition
 #
-# Description: Formats the two partitions on the EBS volume.
+# Description: Formats the partition on the EBS volume.
 #
 # Inputs:
 # MIB_EBS_IMAGE_VOL_DEVICE
@@ -31,16 +31,13 @@
 
 # Format partitions (forces by default)
 
-echo "y" | mkfs.ext2 -F "$MIB_EBS_IMAGE_VOL_DEVICE"1		# /boot
-
-# swap resides on the 3rd and last partition
 case "$MIB_EBS_IMAGE_ROOT_FSTYPE" in
     xfs)
                       apt-get -y install xfsprogs
-                      echo "y" | mkfs.xfs -f "$MIB_EBS_IMAGE_VOL_DEVICE"2		# / (root fs)
+                      echo "y" | mkfs.xfs -f "$MIB_EBS_IMAGE_VOL_DEVICE"1		# / (root fs)
                       ;;
     ext2|ext3|ext4)  
-                      echo "y" | mkfs."$MIB_EBS_IMAGE_ROOT_FSTYPE" -L "$MIB_EBS_IMAGE_ROOT_LABEL" -F "$MIB_EBS_IMAGE_VOL_DEVICE"2		# / (root fs)
+                      echo "y" | mkfs."$MIB_EBS_IMAGE_ROOT_FSTYPE" -L "$MIB_EBS_IMAGE_ROOT_LABEL" -F "$MIB_EBS_IMAGE_VOL_DEVICE"1		# / (root fs)
                       ;;
      *)
                       echo "Unsupported fs type."
@@ -48,6 +45,6 @@ case "$MIB_EBS_IMAGE_ROOT_FSTYPE" in
                       ;;
 esac
 
-echo "$MIB_EBS_IMAGE_VOL_DEVICE"'2 disklabel: '`e2label "$MIB_EBS_IMAGE_VOL_DEVICE"2`
+echo "$MIB_EBS_IMAGE_VOL_DEVICE"'1 disklabel: '`e2label "$MIB_EBS_IMAGE_VOL_DEVICE"1`
 
 echo 'Done.'
