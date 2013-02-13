@@ -30,10 +30,10 @@ apt-get -y install yum rpm python-m2crypto
 : ${EPEL_RELEASE:=6-7}
 #: ${RIGHTLINK_PKG_URL:=}
 
-# silently ensure proc and sysfs are unmounted and remove all previous straps
+# silently ensure proc and sysfs are unmounted
 chroot "$CENTOSBOOTSTRAP_CHROOT" umount /proc > /dev/null 2>&1 || true
 chroot "$CENTOSBOOTSTRAP_CHROOT" umount /sys > /dev/null 2>&1 || true
-rm -Rf "$CENTOSBOOTSTRAP_CHROOT"/* > /dev/null 2>&1 || true
+rm -Rf "$CENTOSBOOTSTRAP_CHROOT"/* > /dev/null 2>&1 || true  # remove all previous straps
 
 # create folders in root of image
 mkdir -p "$CENTOSBOOTSTRAP_CHROOT"

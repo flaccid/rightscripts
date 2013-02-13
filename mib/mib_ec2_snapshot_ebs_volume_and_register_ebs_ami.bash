@@ -4,15 +4,6 @@
 #
 # Description: Snapshots an EBS volume and registers the snapshot as an AMI.
 #
-# Inputs:
-# AMI_NAME
-# AMI_DESCRIPTION
-# AWS_CERT_FILE
-# AWS_PRIVATE_KEY_FILE
-# AMI_REGION
-# AMI_ARCH
-# AMI_EBS_KERNEL_ID
-#
 # Author: Chris Fordham <chris.fordham@rightscale.com>
 
 # Copyright (c) 2007-2008 by RightScale Inc., all rights reserved worldwide
@@ -28,6 +19,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+# Inputs:
+# AMI_NAME
+# AMI_DESCRIPTION
+# AWS_CERT_FILE
+# AWS_PRIVATE_KEY_FILE
+# AMI_REGION
+# AMI_ARCH
+# AMI_EBS_KERNEL_ID
+
+# Usable AKI IDs
 
 # US-East-1
 # aki-825ea7eb ec2-public-images/pv-grub-hd0_1.02-x86_64.gz.manifest.xml
@@ -71,8 +73,8 @@
 # aki-d23ce3cf ec2-public-images-sa-east-1/pv-grub-hd00_1.02-x86_64.gz.manifest.xml
 # aki-823ce39f ec2-public-images-sa-east-1/pv-grub-hd00_1.02-i386.gz.manifest.xml
 
-# source root's profile
-source /root/.profile
+# source root's profile (return true on fail in case the profile contains mesg)
+source /root/.profile || true
 
 # set local variables for the AMI registration
 aws_cert="$AWS_CERT_FILE"
@@ -87,6 +89,11 @@ ami_arch="$AMI_ARCH"
 
 # get volume ID from instance's cloud cache
 ebs_vol=`cat /var/spool/cloud/meta-data/ebs-vol-id`
+
+echo 'EBS Volume details:'
+echo '--'
+echo 'ID:           '"$ebs_vol"
+echo '--'
 
 # create snapshot and get snap ID
 snap_out=$(ec2-create-snapshot \

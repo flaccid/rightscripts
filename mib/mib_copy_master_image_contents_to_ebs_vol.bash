@@ -24,8 +24,8 @@ image_name=`eval echo $LOOPBACK_IMAGE_NAME`
 image_mountpoint=`eval echo $LOOPBACK_IMAGE_MOUNTPOINT`
 image_location=`eval echo $LOOPBACK_IMAGE_LOCATION`
 
-# dd is too slow in EC2 on EBS volumes
-#dd if="$image_location/$image_name.img" of=/dev/sdl
+# dd is too slow in EC2 on volumes
+#dd if="$image_location"/"$image_name".img of=/dev/sdl
 
 # rsync image contents to mounted EBS volume
 echo 'Copying image contents to /mnt/mib-ebs-root, Please wait...'
