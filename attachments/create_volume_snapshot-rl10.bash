@@ -5,8 +5,20 @@ if [ -z "$1" ]; then
   exit 1
 fi
 
+# path sanity
+export PATH="$PATH:/usr/local/bin"
+
 volfound=0
 lineage="$1"
+
+# if jq is not installed, lets install the linux binary
+if ! type jq > /dev/null 2>&1; then
+  echo 'Installing jq...'
+  source /etc/profile.d/*proxy* > /dev/null 2>&1 || true
+  curl -SsLk "https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64" | sudo tee /usr/local/bin/jq > /dev/null 2>&1
+  sudo chmod +x /usr/local/bin/jq
+  /usr/local/bin/jq --version
+fi
 
 echo "Querying instance self..."
 instance_href=$(sudo /usr/local/bin/rsc --rl10 cm15 --x1 ':has(.rel:val("self")).href' index_instance_session /api/sessions/instance)
