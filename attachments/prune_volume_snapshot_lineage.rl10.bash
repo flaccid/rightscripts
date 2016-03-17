@@ -34,6 +34,8 @@ if ! type jq > /dev/null 2>&1; then
   /usr/local/bin/jq --version
 fi
 
+echo "Started on $(date)"
+
 echo "Querying instance self..."
 instance_href=$(sudo /usr/local/bin/rsc --rl10 cm15 --x1 ':has(.rel:val("self")).href' index_instance_session /api/sessions/instance)
 server_href=$(sudo /usr/local/bin/rsc --rl10 --pp cm15 show --x1 ':has(.rel:val("parent")).href' "$instance_href")
@@ -90,5 +92,7 @@ while [ $count -lt $snap_count ]; do
   fi
   let count=count+1
 done
+
+echo "Finished on $(date)"
 
 echo 'Done.'
