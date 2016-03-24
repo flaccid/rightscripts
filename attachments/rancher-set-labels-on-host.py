@@ -23,7 +23,7 @@ def main():
   parser.add_argument('--env',         type=str, default=None, help='Rancher environment to use')
   parser.add_argument('--timeout',     type=str, default=600, help='Timeout in seconds to wait for host to be active. default 600 seconds')
   parser.add_argument('--retry',       type=str, default=10, help='retry time in seconds waiting for a host to be active. default 10 seconds')
-  parser.add_argument('--cleanmissing',type=bool, default=False, help='this will remove labels on a host that are not supplied with the --label argument. defaults to false')
+  parser.add_argument('--cleanmissing',action='store_true', help='this will remove labels on a host that are not supplied with the --label argument. defaults to false')
   #parser.add_argument('--env',       type=str, default=None, help='Rancher environment to use')
 
   args = parser.parse_args()
@@ -66,19 +66,19 @@ def main():
   changed = False
   for i in new_labels:
     if i in cur_labels:
-      if v != cur_labels[i]:
-        print 'INFO: {} has a changed value from: {} to: {}'.format(i, cur_labels[i], v)
+      if new_labels[i] != cur_labels[i]:
+        print 'INFO: {} has a changed value from: {} to: {}'.format(i, cur_labels[i], new_labels[i])
         changed = True
     else:
       print 'INFO: {} is a new label'.format(i)
-      change = True
+      changed = True
       
   for k,v in cur_labels.iteritems():
-    if args.cleanmissing:
-      print "Removing old labels not defined"
-      change = True
-    else:
-      if k not in new_labels:
+    if k not in new_labels:
+      if args.cleanmissing:
+        print "Found label on host thats not defined here...removing since youve specified to clean up these"
+        changed = True
+      else:
         new_labels[k] = v
 
   print 'Saving labels: {}'.format(new_labels)
