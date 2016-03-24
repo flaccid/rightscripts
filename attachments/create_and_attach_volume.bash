@@ -43,6 +43,9 @@ case "$api_result" in
   ;;
 esac
 
+# corner case for GCE which doesn’t like full device paths/names but only wants the short name
+[[ "$cloud_href" = '/api/clouds/2175' ]] && DOCKER_DIR_BLOCK_DEVICE=$(echo "$DOCKER_DIR_BLOCK_DEVICE" | awk -F'[=/]' '{print $3}')
+
 echo 'Attaching the volume...'
 api_result=$(sudo /usr/local/bin/rsc --rl10 cm15 create --dump=debug "$cloud_href/volume_attachments" \
   volume_attachment[device]="$DOCKER_DIR_BLOCK_DEVICE" \
