@@ -1,8 +1,5 @@
 #!/usr/bin/env python
 
-# e.g. (assumes the rancher creds are also set in env)
-# RANCHER_HOST_LABELS="fruit=apple,vegetable=carrot" RANCHER_HOST_NAME=foo.bar.suf rancher-set-labels-on-host.py
-
 import argparse
 import os, sys
 import cattle
@@ -53,7 +50,7 @@ def main():
 
 
   # a dict of labels that will be saved back to the host
-  cur_labels = cattle_host[0]['labels']
+  cur_labels = cattle_host['labels']
 
   print 'Current labels: {}'.format(cur_labels)
 
@@ -84,7 +81,7 @@ def main():
   print 'Saving labels: {}'.format(new_labels)
   # finally, get the individual host and update it's labels
   if changed:
-    h = client.by_id_host(cattle_host[0]['physicalHostId'])
+    h = client.by_id_host(cattle_host['physicalHostId'])
     client.update(h, labels=new_labels)
   else:
     print "Nothing has changed...skipping update"
@@ -92,13 +89,18 @@ def main():
 def wait_host_active(c, host, epoch, timeout, retry):
 
   while True:
-    h = c.list_host(hostname=host, state='active')
+    hosts = c.list_host(state='active')
+    host_config = None
+    for i in hosts:
+      if i[u'hostname'] == host:
+        host_config = i
 
-    if len(h) == 0:
-        print 'Rancher host \'{}\' does not exist yet, try again in 10 seconds.'.format(host)
+    if host_config:
+        print 'Found Rancher host: {}'.format(host_config['physicalHostId'])
+        return host_config
     else:
-        print 'Found Rancher host: {}'.format(h[0]['physicalHostId'])
-        return h
+        print 'Rancher host \'{}\' does not exist yet, try again in 10 seconds.'.format(host)
+
     if time.time() > epoch:
         print 'Rancher host not found active after {} second(s), giving up!'.format(str(timeout))
         sys.exit(1)
