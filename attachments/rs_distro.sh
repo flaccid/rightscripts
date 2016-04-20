@@ -14,11 +14,16 @@ if [ -e /etc/redhat-release ]; then
     distro=centos
   fi
 elif type lsb_release >/dev/null 2>&1; then
-  if lsb_release -d | grep -i ubuntu >/dev/null 2>&1; then
+  lsb_d="$(lsb_release -ds)"
+  if echo "$lsb_d" | grep -i ubuntu >/dev/null 2>&1; then
     distro=ubuntu
-  elif lsb_release -d | grep -i debian >/dev/null 2>&1; then
+  elif echo "$lsb_d" | grep -i debian >/dev/null 2>&1; then
     distro=debian
+  elif echo "$lsb_d" | grep -i 'arch linux' >/dev/null 2>&1; then
+    distro=arch
   fi
+elif [ -e /etc/arch-release ]; then
+  distro=arch
 else
   distro=unknown
 fi
