@@ -7,6 +7,7 @@
 # $DOCKER_HTTP_PROXY        http_proxy URL for the Docker daemon.
 # $DOCKER_VERSION           The version of Docker to install from the upstream official repository.
 # $DOCKER_SKIP_ON_DETECT    If the docker command is found, skip Docker installation.
+# $DOCKER_DAEMON_JSON       The JSON content for the Docker daemon configuration file.
 
 # Upstream documentation:
 # https://docs.docker.com/engine/admin/systemd
@@ -30,6 +31,7 @@ fi
 : "${DOCKER_HTTPS_PROXY:=}"
 : "${DOCKER_NO_PROXY:=}"
 : "${DOCKER_VERSION:=}"
+: "${DOCKER_DAEMON_JSON:=}"
 
 # no need to restart docker yet
 restart_docker=0
@@ -59,6 +61,15 @@ if ! type wget >/dev/null 2>&1; then
   fi
 fi
 
+set_daemon_json() {
+  if [ ! -z "$DOCKER_DAEMON_JSON" ]; then
+    echo 'Populate daemon configuration file.'
+    echo '== /etc/docker/daemon.json =='
+    echo "$DOCKER_DAEMON_JSON" | sudo tee /etc/docker/daemon.json
+    echo '===='
+  fi
+}
+
 install_docker() {
   # make sure we have docker supported with selinux e.g. on ec2
   # this needs to be done before installing the docker-engine package
@@ -75,6 +86,8 @@ install_docker() {
     sudo apt-get -y install apparmor lxc aufs-tools >/dev/null 2>&1 || true
     sudo modprobe aufs >/dev/null 2>&1 || true
   fi
+
+  set_daemon_json
 
   echo 'Installing docker...'
   if [ ! -z "$DOCKER_VERSION" ]; then
