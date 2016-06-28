@@ -1,5 +1,20 @@
 #! /bin/bash -e
 
+# Inputs:
+# $DOCKER_UPGRADE           Whether to upgrade Docker (true|false).
+# $DOCKER_HTTPS_PROXY       https_proxy URL for the Docker daemon.
+# $DOCKER_NO_PROXY          no_proxy URL for the Docker daemon.
+# $DOCKER_HTTP_PROXY        http_proxy URL for the Docker daemon.
+# $DOCKER_VERSION           The version of Docker to install from the upstream official repository.
+# $DOCKER_SKIP_ON_DETECT    If the docker command is found, skip Docker installation.
+
+# Upstream documentation:
+# https://docs.docker.com/engine/admin/systemd
+# https://docs.docker.com/v1.10/engine/reference/commandline/daemon/#daemon-configuration-file
+
+# systemd notes:
+# Proxy settings do need to be set via drop-in as it cannot be done with `daemon.json`.
+
 . "$RS_ATTACH_DIR/docker_service.sh"
 . "$RS_ATTACH_DIR/rs_distro.sh"
 
@@ -8,10 +23,16 @@ if [ "$RS_DISTRO" = 'atomichost' ]; then
   exit 0
 fi
 
+# defaults
 : "${DOCKER_SKIP_ON_DETECT:=true}"
 : "${DOCKER_UPGRADE:=true}"
-: "${DOCKER_PROXY:=}"
-: "${restart_docker:=0}"
+: "${DOCKER_HTTP_PROXY:=}"
+: "${DOCKER_HTTPS_PROXY:=}"
+: "${DOCKER_NO_PROXY:=}"
+: "${DOCKER_VERSION:=}"
+
+# no need to restart docker yet
+restart_docker=0
 
 if type docker >/dev/null 2>&1; then
   if [ "$DOCKER_SKIP_ON_DETECT" = 'true' ]; then
