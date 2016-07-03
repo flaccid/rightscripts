@@ -96,6 +96,8 @@ if [ -e /var/lib/docker ]; then
   sudo rm -Rf /var/lib/docker
 fi
 sudo mkdir -p /var/lib/docker
+# Relaxing permissions #
+sudo chmod +rx /var/lib/docker
 
 # initialise volume
 echo 'Initialising volume...'
