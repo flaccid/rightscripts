@@ -1,72 +1,110 @@
-#!/bin/bash -e
+#! /bin/bash -e
 
-# RightScript: Set ulimit for open files
-#
-# Description: Sets/prints the ulimit for open files on the system.
-#
-# Author: Chris Fordham <chris.fordham@rightscale.com>
+# Set system ulimits
 
-# Copyright (c) 2007-2008 by RightScale Inc., all rights reserved worldwide
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# Description: Sets/prints the ulimits on the system.
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# Author: Chris Fordham <chris.fordham@industrieit.com>
 
 # Inputs:
-#ULIMIT_USER
-#ULIMIT_OPEN_FILES
-#ULIMIT_REBOOT
+# $ULIMITS          A semi-colon separated list of limits to set in /etc/security/limits.conf
+#                   e.g. *,hard,nproc,32768;*,hard,memlock,1048576
+# $ULIMITS_SET      Whether to set the ulimits provided
+# $ULIMITS_REBOOT   Whether to reboot after setting the ulimits
+# $ULIMITS_SERVICES_TO_RESTART  Comma separated list of system services to restart after setting limits (optional)
 
-: "${ULIMIT_USER:=root}"
-: "${ULIMIT_OPEN_FILES:=4096}"
-: "${ULIMIT_REBOOT:=yes}"
+: "${ULIMITS:=}"
+: "${ULIMITS_REBOOT:=true}"
+: "${ULIMITS_SET}:=true}"
+: "${ULIMITS_SERVICES_TO_RESTART:=}"
+
+if [ ! "$ULIMITS_SET" = 'true' ]; then
+  echo '$ULIMITS_SET not set to true, skipping.'
+  exit 0
+fi
+
+if [ -z "$ULIMITS" ]; then
+  echo 'No ulimits provided, skipping.'
+  exit 0
+fi
+
+ulimits=(${ULIMITS//;/ })
 
 # display system ulimits
-echo 'Current ulimits:'
+echo 'Current global ulimits:'
 echo '--'
 ulimit -a   # see all the kernel parameters
 echo '--'
 echo
-echo 'The current ulimit for open files is '"$(ulimit -n)"
 
-# set ulimit test
-echo 'Setting ulimit in current shell.'
-ulimit -n "$ULIMIT_OPEN_FILES"				#  set the number open files (effectively a test as it only applies to this current shell)
-
-if [ -e /etc/security/limits.conf ]; then
-	echo 'Updating /etc/security/limits.conf.'
-	if ! grep "$ULIMIT_USER               hard    nofile            $ULIMIT_OPEN_FILES" /etc/security/limits.conf; then
-		echo 'Backing up current limits.conf.'
-		cp -v /etc/security/limits.conf "/etc/security/limits.conf.backup.$(date +%s)"
-		echo "$ULIMIT_USER               hard    nofile            $ULIMIT_OPEN_FILES" >> /etc/security/limits.conf
-	fi
-fi
-
-if [ "$ULIMIT_USER" != "*" ]; then
-	if ! grep "$ULIMIT_USER" /etc/passwd; then
-		echo 'WARNING: User, $ULIMIT_USER does not exist!'
-		echo "You may like to add this user first or check if you are specifying the correct user in the ULIMIT_USER input."
-	else
-		echo 'Adding ulimit to shell profiles for root.'
-		IFS=: read -r _ _ _ _ _ home _ < <(getent passwd "$ULIMIT_USER")
-		echo "ulimit -n $ULIMIT_OPEN_FILES" >> "$home/.bashrc"
-		echo "ulimit -n $ULIMIT_OPEN_FILES" >> "$home/.bash_profile"
-	fi
-fi
-
-if [ "$ULIMIT_REBOOT" ]; then
-	echo 'Backgrounding reboot command (60 seconds)'
-	exec $(sleep 60; reboot <&- >&- 2>&- )&
+if [ -e /etc/security/limits.d ]; then
+  limit_file=/etc/security/limits.d/extra.conf
 else
-	echo 'IMPORTANT: A system reboot is required to effect changes.'
+  limit_file=/etc/security/limits.conf
+fi
+sudo touch "$limit_file"
+echo "Using $limit_file"
+
+# make a copy of the existing file to see if we need to reboot at end
+cp "$limit_file" /tmp/limit.conf.old
+
+# remove the end of line line
+sudo sed -i '/# End of file/d' "$limit_file"
+
+for ulimit in "${ulimits[@]}"
+do
+  ulimit=$(echo "$ulimit" | tr , '\t\t')
+
+  if ! grep "$ulimit" "$limit_file"; then
+    echo "$ulimit" | sudo tee -a "$limit_file"
+  fi
+done
+
+# add the end of line line
+sudo sed -i '/^$/d' "$limit_file"
+echo "" | sudo tee -a "$limit_file"
+echo "# End of file" | sudo tee -a "$limit_file"
+
+# display the new ulimits file
+echo "New ulimits file ($limit_file):"
+echo '--'
+cat "$limit_file"
+echo '--'
+echo
+
+diff /tmp/limit.conf.old "$limit_file" && echo "(no changes to existing file)"
+
+# restart system services if specified
+# currently we rely on the service command
+if ! diff /tmp/limit.conf.old "$limit_file"; then
+  if [ ! -z "$ULIMITS_SERVICES_TO_RESTART" ]; then
+    ULIMITS_SERVICES_TO_RESTART=(${ULIMITS_SERVICES_TO_RESTART//,/ })
+
+    for service in "${ULIMITS_SERVICES_TO_RESTART[@]}"
+    do
+      if [ "$service" = 'rightlink' ]; then
+        echo 'Backgrounding restart of rightlink service (180 seconds)'
+        exec $(sleep 180; sudo service "$service" restart &)&
+      else
+        echo "Restarting ${service}..."
+        sudo service "$service" restart
+      fi
+    done
+  else
+    echo 'Skipping service restart(s) as there is no ulimits change.'
+  fi
+fi
+
+if ! diff /tmp/limit.conf.old "$limit_file"; then
+  if [ "$ULIMITS_REBOOT" = 'true' ]; then
+    echo 'Backgrounding reboot command (60 seconds)'
+    exec $(sleep 60; sudo reboot &)&
+  else
+    echo 'IMPORTANT: A system reboot still may be required to effect changes.'
+  fi
+elif [ "$ULIMITS_REBOOT" = 'true' ]; then
+  echo 'Skipping reboot as there is no change to the limits file.'
+  exit 0
 fi
 
 echo 'Done.'
