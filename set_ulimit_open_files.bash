@@ -76,6 +76,9 @@ diff /tmp/limit.conf.old "$limit_file" && echo "(no changes to existing file)"
 
 # restart system services if specified
 # currently we rely on the service command
+# its rare this would be needed unless a service uses PAM/login shells
+# usually system services would be driven by a systemd drop-in
+# https://www.freedesktop.org/software/systemd/man/systemd.exec.html
 if ! diff /tmp/limit.conf.old "$limit_file"; then
   if [ ! -z "$ULIMITS_SERVICES_TO_RESTART" ]; then
     ULIMITS_SERVICES_TO_RESTART=(${ULIMITS_SERVICES_TO_RESTART//,/ })
