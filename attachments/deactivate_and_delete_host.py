@@ -59,7 +59,7 @@ while client.by_id_host(host_id).state != "purged":
     if 'deactivate' in client.by_id_host(host_id).actions:
         print('Deactivating host...')
         client.by_id_host(host_id).deactivate()
-    elif ('remove' in client.by_id_host(host_id).actions):
+    elif 'remove' in client.by_id_host(host_id).actions:
         print('Removing host...')
         client.by_id_host(host_id).remove()
     elif 'purge' in client.by_id_host(host_id).actions:
