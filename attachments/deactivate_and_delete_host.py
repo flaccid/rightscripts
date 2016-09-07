@@ -54,18 +54,22 @@ else:
 print('Initial actions available:')
 print(client.by_id_host(host_id).actions)
 
-for x in range(0, 3):
+timeout = time.time() + 60*5   # 5 minutes from now
+while client.by_id_host(host_id).state != "purged":
     if 'deactivate' in client.by_id_host(host_id).actions:
         print('Deactivating host...')
         client.by_id_host(host_id).deactivate()
-    elif 'remove' in client.by_id_host(host_id).actions:
+    elif ('remove' in client.by_id_host(host_id).actions):
         print('Removing host...')
         client.by_id_host(host_id).remove()
     elif 'purge' in client.by_id_host(host_id).actions:
         print('Purging host....')
         client.by_id_host(host_id).purge()
-    else:
-        if x == 0:
-            print('No removable actions found.')
+    
+    time.sleep(3)
+    
+    print('Current host state is: %s' % client.by_id_host(host_id).state)
+
+    if time.time() > timeout:
+        print('Timeout')
         break
-    time.sleep(2)
