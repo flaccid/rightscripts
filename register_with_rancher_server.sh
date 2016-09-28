@@ -1,4 +1,4 @@
-#! /bin/sh -e
+#! /bin/bash -e
 
 # Register with Rancher server
 
@@ -12,10 +12,13 @@
 # receiving 401 Unauthorized we a previously registered host:
 sudo rm -Rf /var/lib/rancher/state
 
-: "${RANCHER_AGENT_TAG:=v0.8.2}"
+: "${RANCHER_AGENT_TAG:=v1.0.1}"
+
+# currently we assume the device name will always reside in the 5th column
+iface=$(ip route | awk '/default/ { print $5 }')
 
 # we do this because currently (-rwx--x--x 1 root root)
-private_ip=`ifconfig eth0| grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*'`
+private_ip=`ifconfig $iface | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*'`
 
 env=$(sudo cat /var/spool/rancher/registration.sh)
 eval "$env"
