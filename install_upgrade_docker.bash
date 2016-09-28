@@ -8,6 +8,7 @@
 # $DOCKER_VERSION           The version of Docker to install from the upstream official repository.
 # $DOCKER_SKIP_ON_DETECT    If the docker command is found, skip Docker installation.
 # $DOCKER_DAEMON_JSON       The JSON content for the Docker daemon configuration file.
+# $DOCKER_USER_LIMITS       User limits not already declared by upstream Docker systemd unit file.
 
 # Upstream documentation:
 # https://docs.docker.com/engine/admin/systemd
@@ -32,6 +33,7 @@ fi
 : "${DOCKER_NO_PROXY:=}"
 : "${DOCKER_VERSION:=}"
 : "${DOCKER_DAEMON_JSON:=}"
+: "${DOCKER_USER_LIMITS:=}"
 
 # no need to restart docker yet
 restart_docker=0
@@ -198,6 +200,18 @@ if type docker >/dev/null 2>&1; then
   fi
 else
   install_docker
+fi
+
+echo 'Configuring any custom Docker daemon user limits'
+if [ -n "${DOCKER_USER_LIMITS}" ]; then
+    # ensure drop-in folder exists
+    sudo mkdir -p /etc/systemd/system/docker.service.d
+
+    # create a drop-in file using a newline separated variable of custom user limits
+    sudo tee /etc/systemd/system/docker.service.d/user-limits.conf > /dev/null <<EOF
+[Service]
+${DOCKER_USER_LIMITS}
+EOF
 fi
 
 if [[ ! -z "$DOCKER_HTTP_PROXY" ]] || [[ ! -z "$DOCKER_HTTPS_PROXY" ]] || [[ ! -z "$DOCKER_NO_PROXY" ]]; then
