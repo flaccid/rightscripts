@@ -26,7 +26,7 @@ fi
 
 # exit if protection is on and volume is not initialised
 if [ "$DOCKER_DIR_PROTECTION" = 'true' ]; then
-  if mount | grep /var/lib/docker; then
+  if mount | grep /var/lib/docker | grep "$DOCKER_DIR_BLOCK_DEVICE"; then
     echo '$DOCKER_DIR_PROTECTION = true and volume is currently mounted, skipping.'
     exit 0
   fi
