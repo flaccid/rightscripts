@@ -13,6 +13,7 @@
 . /etc/profile.d/*proxy* > /dev/null 2>&1
 export http_proxy
 export https_proxy
+export no_proxy
 
 # https://github.com/rancher/rancher/issues/1370
 # Note that due this bug you may need to action the following if
@@ -54,7 +55,11 @@ if [ ! -z $https_proxy ]; then
   https_proxy="-e https_proxy=$https_proxy"
 fi
 
-proxies="$http_proxy $https_proxy"
+if [ ! -z $no_proxy ]; then
+  no_proxy="-e no_proxy=$no_proxy"
+fi
+
+proxies="$http_proxy $https_proxy $no_proxy"
 
 set -x
 
