@@ -9,6 +9,11 @@
 
 : "${RANCHER_HOST_EXTERNAL_DNS_IP:=}"
 
+# export proxy if on system level
+. /etc/profile.d/*proxy* > /dev/null 2>&1
+export http_proxy
+export https_proxy
+
 # https://github.com/rancher/rancher/issues/1370
 # Note that due this bug you may need to action the following if
 # receiving 401 Unauthorized we a previously registered host:
@@ -41,12 +46,23 @@ if [ ! -z "$CATTLE_HOST_LABELS" ]; then
   cattle_labels="-e CATTLE_HOST_LABELS=$CATTLE_HOST_LABELS"
 fi
 
+if [ ! -z $http_proxy ]; then
+  http_proxy="-e http_proxy=$http_proxy"
+fi
+
+if [ ! -z $https_proxy ]; then
+  https_proxy="-e https_proxy=$https_proxy"
+fi
+
+proxies="$http_proxy $https_proxy"
+
 set -x
 
 echo 'Running rancher/agent container.'
 
 sudo docker run -d --privileged \
   -e CATTLE_AGENT_IP="${private_ip}" \
+  $proxies \
   $cattle_labels \
   -v /var/run/docker.sock:/var/run/docker.sock "rancher/agent:$RANCHER_AGENT_TAG" \
   "$CATTLE_URL/scripts/$CATTLE_REGISTRATION_SECRET_KEY"
