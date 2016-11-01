@@ -11,7 +11,7 @@
 : "${RANCHER_DOCKER_CMD:=}"
 : "${RANCHER_TAG:=stable}"
 
-[ ! -z "$RANCHER_CONTAINER_TIMEZONE" ] && RANCHER_DOCKER_OPTS="$RANCHER_DOCKER_OPTS -e TZ='$RANCHER_CONTAINER_TIMEZONE'"
+[ ! -z "$RANCHER_CONTAINER_TIMEZONE" ] && RANCHER_DOCKER_OPTS="$RANCHER_DOCKER_OPTS -e TZ=$RANCHER_CONTAINER_TIMEZONE"
 
 #---------------------------------------------------------------------------------------------------------------------------
 # FUNCTIONS
