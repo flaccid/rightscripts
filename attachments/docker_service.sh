@@ -11,6 +11,27 @@ else
   initsys='unknown'
 fi
 
+# if docker system service is configured correctly, this shouldn't be needed
+function wait_for_docker_daemon()
+{
+    echo 'Checking/waiting for docker service to be ready.'
+    local i=0
+    while true
+    do
+        if ! sudo systemctl is-active docker; then
+          echo "Sleeping 10 seconds, waiting for Docker daemon to start."
+          sleep 10
+          i=$((i+1))
+          if [ "$i" > 29 ]; then
+            echo 'Service not active after 5mins, exiting!'
+            exit 1
+          fi
+        else
+          return
+        fi
+    done
+}
+
 docker_service() {
   case "$1" in
     status*)
@@ -57,6 +78,7 @@ docker_service() {
           fi
         ;;
       esac
+      # wait_for_docker_daemon
     ;;
     stop*)
       case "$initsys" in
@@ -76,9 +98,14 @@ docker_service() {
           sudo systemctl restart docker
         ;;
         sysvinit*)
+        if ! service docker status | grep 'start/running'; then
           sudo service docker restart
+        else
+          sudo service docker start
+        fi
         ;;
       esac
+      # wait_for_docker_daemon
     ;;
   esac
 }
