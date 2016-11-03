@@ -121,7 +121,7 @@ sudo mount "$DOCKER_DIR_BLOCK_DEVICE" /var/lib/docker
 
 # finally, restart/start docker daemon again
 echo 'Attempting to restart/start docker daemon...'
-docker_service restart || docker_service start
+docker_service restart
 
 sleep 5
 sudo docker info
