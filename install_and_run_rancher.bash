@@ -51,7 +51,7 @@ function run_rancher()
 
 function container_id()
 {
-  local container_id=$(docker inspect --format="{{.Id}}" "$(docker ps | grep 'rancher/server' | awk '{print $NF}')")
+  local container_id=$(sudo docker inspect --format="{{.Id}}" "$(sudo docker ps | grep 'rancher/server' | awk '{print $NF}')")
   echo "$container_id"
 }
 
