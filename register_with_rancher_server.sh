@@ -10,7 +10,7 @@
 : "${RANCHER_HOST_EXTERNAL_DNS_IP:=}"
 
 # export proxy if on system level
-. /etc/profile.d/*proxy* > /dev/null 2>&1
+. /etc/profile.d/*proxy* > /dev/null 2>&1 || true
 export http_proxy
 export https_proxy
 export no_proxy
@@ -20,7 +20,7 @@ export no_proxy
 # receiving 401 Unauthorized we a previously registered host:
 sudo rm -Rf /var/lib/rancher/state
 
-: "${RANCHER_AGENT_TAG:=v1.0.1}"
+: "${RANCHER_AGENT_TAG:=v1.0.2}"
 
 # currently we assume the device name will always reside in the 5th column
 iface=$(ip route | awk '/default/ { print $5 }')
@@ -61,9 +61,9 @@ fi
 
 proxies="$http_proxy $https_proxy $no_proxy"
 
-set -x
-
 echo 'Running rancher/agent container.'
+
+set -x
 
 sudo docker run -d --privileged \
   -e CATTLE_AGENT_IP="${private_ip}" \
