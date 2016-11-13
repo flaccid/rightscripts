@@ -14,6 +14,7 @@
 # $MYSQL_DOCKER_MYCNF
 # $MYSQL_DOCKER_CONF_D
 # $MYSQL_DOCKER_EXTRA_OPTS
+# $MYSQL_DOCKER_RESTART_POLICY
 #
 # Used by the image with environment variables:
 # $MYSQL_DATABASE
@@ -33,6 +34,7 @@
 : "${MYSQL_USER:=}"
 : "${MYSQL_PASSWORD:=}"
 : "${MYSQL_ALLOW_EMPTY_PASSWORD:=no}"
+: "${MYSQL_DOCKER_RESTART_POLICY:=unless-stopped"
 
 [ ! -z "$MYSQL_DATABASE" ] && createdb="-e MYSQL_DATABASE=$MYSQL_DATABASE"
 [ ! -z "$MYSQL_DOCKER_HOST_PORT" ] && ports="-p $MYSQL_DOCKER_HOST_PORT:3306"
@@ -82,7 +84,7 @@ echo 'Running mysql container'
 if ! sudo docker ps -a | tail -n +2 | awk -F " " '{print $NF}' | grep "$MYSQL_DOCKER_CONTAINER_NAME" > /dev/null 2>&1; then
   set -x
 
-  container_id=$(sudo -E docker run --name "$MYSQL_DOCKER_CONTAINER_NAME" \
+  container_id=$(sudo -E docker run --restart="$MYSQL_DOCKER_RESTART_POLICY" --name "$MYSQL_DOCKER_CONTAINER_NAME" \
     $ports \
     $user \
     $emptypass \
