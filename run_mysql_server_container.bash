@@ -34,7 +34,7 @@
 : "${MYSQL_USER:=}"
 : "${MYSQL_PASSWORD:=}"
 : "${MYSQL_ALLOW_EMPTY_PASSWORD:=no}"
-: "${MYSQL_DOCKER_RESTART_POLICY:=unless-stopped"
+: "${MYSQL_DOCKER_RESTART_POLICY:=unless-stopped}"
 
 [ ! -z "$MYSQL_DATABASE" ] && createdb="-e MYSQL_DATABASE=$MYSQL_DATABASE"
 [ ! -z "$MYSQL_DOCKER_HOST_PORT" ] && ports="-p $MYSQL_DOCKER_HOST_PORT:3306"
