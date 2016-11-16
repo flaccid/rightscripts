@@ -16,7 +16,7 @@ fi
 # $DOCKER_DIR_VOLUME_SNAPSHOT_HREF
 # $DOCKER_DIR_SAS_DEVICE
 
-: "${DOCKER_DIR_BLOCK_DEVICE:=/dev/sdb}"
+: "${DOCKER_DIR_BLOCK_DEVICE:=/dev/sdc}"
 : "${DOCKER_DIR_INITIALISE:=true}"
 : "${DOCKER_DIR_VOLUME_SIZE:=10}"
 : "${DOCKER_DIR_VOLUME_NAME:=`hostname`-dockerdata}"
@@ -50,8 +50,12 @@ if [ ! -e "$DOCKER_DIR_BLOCK_DEVICE" ]; then
   export DOCKER_DIR_VOLUME_TYPE_HREF
   export DOCKER_DIR_VOLUME_SNAPSHOT_HREF
   export DOCKER_DIR_SAS_DEVICE
-  bash -ex "$RS_ATTACH_DIR/create_and_attach_volume.bash"
+  sudo chmod +x "$RS_ATTACH_DIR/create_and_attach_volume.bash"
+  ! "$RS_ATTACH_DIR/create_and_attach_volume.bash" && exit 1
 fi
+
+# a small sleep to let the block device settle, just to be sure
+sleep 5
 
 # install required packages
 packages=('util-linux')
@@ -70,12 +74,12 @@ aufs)
   fi
   ;;
 esac
+echo 'Installing any needed packages...'
 if type yum > /dev/null 2>&1; then
   sudo yum -y install "${packages[@]}"
 elif type apt-get > /dev/null 2>&1; then
   sudo apt-get -y install "${packages[@]}"
 fi
-
 
 . "$RS_ATTACH_DIR/docker_service.sh"
 
