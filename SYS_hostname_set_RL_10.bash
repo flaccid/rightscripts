@@ -53,7 +53,7 @@ HOSTNAME=${HOSTNAME##*( |-)}
 HOSTNAME=$(echo $HOSTNAME | cut -d' ' -f 1)
 
 # Underscores are illegal in hostnames, so change them to dashes.
-HOSTNAME=$(echo $HOSTNAME | sed "s/_/-/")
+HOSTNAME=$(echo $HOSTNAME | sed "s/_/-/g")
 
 # Append a numeric suffix to the sname, if we have one.
 if [ ! -z $numeric_suffix ]; then
