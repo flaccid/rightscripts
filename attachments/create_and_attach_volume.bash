@@ -18,7 +18,8 @@ server_href=$(sudo /usr/local/bin/rsc --rl10 --pp cm15 show --x1 ':has(.rel:val(
 cloud_href=$(sudo /usr/local/bin/rsc --rl10 cm15 show "$instance_href" view=extended --x1 ':has(.rel:val("cloud")).href')
 # not all clouds have 'datacenters'
 datacenter_href=$(sudo /usr/local/bin/rsc --rl10 cm15 show "$instance_href" view=extended --x1 ':has(.rel:val("datacenter")).href' 2>/dev/null || true)
-placement_group_href=$(sudo /usr/local/bin/rsc --rl10 cm15 show "$instance_href" view=extended --x1 ':has(.rel:val("placement_group")).href')
+# not all clouds have 'placement groups'
+placement_group_href=$(sudo /usr/local/bin/rsc --rl10 cm15 show "$instance_href" view=extended --x1 ':has(.rel:val("placement_group")).href' 2>/dev/null || true)
 cloud_type=$(sudo /usr/local/bin/rsc --rl10 cm15 show "$cloud_href" --x1 ".cloud_type")
 echo "cloud href:      $cloud_href"
 echo "instance href:   $instance_href"
