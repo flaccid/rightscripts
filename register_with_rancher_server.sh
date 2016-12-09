@@ -56,7 +56,7 @@ if [ ! -z $https_proxy ]; then
 fi
 
 if [ ! -z $no_proxy ]; then
-  no_proxy="-e no_proxy=$no_proxy"
+  no_proxy="-e NO_PROXY=$no_proxy -e no_proxy=$no_proxy"
 fi
 
 proxies="$http_proxy $https_proxy $no_proxy"
