@@ -1,5 +1,7 @@
 #!/bin/sh -x
 
+# no checking/idempotency yet!
+
 ! ip addr | grep lxcbr0 && echo 'lxcbr0 not active, skipping.' && exit 0
 
 sudo ip route del 10.0.3.0/24
