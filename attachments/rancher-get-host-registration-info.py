@@ -6,12 +6,13 @@ import cattle
 import requests
 import urlparse
 from urlparse import urlparse
+from urlparse import urljoin
 
 RANCHER_API_VERSION = 1
 
 # in case user has already provided the api version in the URL or a more specific URL
 if '/v' not in os.environ['RANCHER_URL']:
-    RANCHER_URL = urlparse.urljoin(os.environ['RANCHER_URL'], '/v' + str(RANCHER_API_VERSION))
+    RANCHER_URL = urljoin(os.environ['RANCHER_URL'], '/v' + str(RANCHER_API_VERSION))
 else:
     RANCHER_URL = os.environ['RANCHER_URL']
 
