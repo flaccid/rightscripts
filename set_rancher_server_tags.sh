@@ -42,8 +42,14 @@ if [ "$RANCHER_SERVER_SET_ACCOUNT_KEYPAIR_TAG" = 'true' ]; then
   # if jq is not installed, lets install the linux binary
   if ! type jq > /dev/null 2>&1; then
     echo 'Installing jq...'
-    source /etc/profile.d/*proxy* > /dev/null 2>&1 || true
-    curl -SsLk "https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64" | sudo tee /usr/local/bin/jq > /dev/null 2>&1
+    compgen -G "/etc/profile.d/*proxy*" > /dev/null 2>&1 && source /etc/profile.d/*proxy* > /dev/null 2>&1
+    curl -SsLk \
+      --connect-timeout 5 \
+      --max-time 30 \
+      --retry 10 \
+      --retry-delay 0 \
+      --retry-max-time 120 \
+        "https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64" | sudo tee /usr/local/bin/jq > /dev/null 2>&1
     sudo chmod +x /usr/local/bin/jq
     /usr/local/bin/jq --version
   fi
