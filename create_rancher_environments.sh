@@ -50,7 +50,8 @@ echo "RANCHER_ACCESS_KEY: $RANCHER_ACCESS_KEY"
 echo "RANCHER_ENVIRONMENTS_CREATE: $RANCHER_ENVIRONMENTS_CREATE"
 
 # create environment if not existing
-envs=(${RANCHER_ENVIRONMENTS_CREATE//,/ })
+IFS=, read -ra envs <<< "$RANCHER_ENVIRONMENTS_CREATE"
+declare -p arr
 for env in "${envs[@]}"
 do
   # check if environment exists
