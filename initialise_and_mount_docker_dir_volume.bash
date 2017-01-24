@@ -107,11 +107,17 @@ sudo chmod +rx /var/lib/docker
 echo 'Initialising volume...'
 sudo wipefs "$DOCKER_DIR_BLOCK_DEVICE"
 sleep 1
-if [ "$DOCKER_DIR_VOLUME_FSTYPE" = 'btrfs' ]; then
+case $DOCKER_DIR_VOLUME_FSTYPE in
+btrfs)
   mkfs_cmd='mkfs.btrfs -f'
-else
+  ;;
+xfs)
+  mkfs_cmd='mkfs.xfs -f -n ftype=1'
+  ;;
+*)
   mkfs_cmd='mkfs.ext4'
-fi
+  ;;
+esac
 sudo $mkfs_cmd "$DOCKER_DIR_BLOCK_DEVICE"
 
 # add volume to fstab
