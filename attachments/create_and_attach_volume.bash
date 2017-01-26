@@ -63,12 +63,10 @@ esac
 [[ "$cloud_type" == *"azure"* ]] && DOCKER_DIR_BLOCK_DEVICE='01'
 
 echo 'Attaching the volume...'
-cmd="sudo /usr/local/bin/rsc --rl10 cm15 create --dump=debug $cloud_href/volume_attachments \
-  volume_attachment[device]=$DOCKER_DIR_BLOCK_DEVICE \
-  volume_attachment[instance_href]=$instance_href \
-  volume_attachment[volume_href]=$volume_href"
-echo "> $cmd"
-api_result=$(eval "$cmd" 2>&1 || true)
+api_result=$(sudo /usr/local/bin/rsc --rl10 cm15 create --dump=debug "$cloud_href/volume_attachments" \
+  volume_attachment[device]="$DOCKER_DIR_BLOCK_DEVICE" \
+  volume_attachment[instance_href]="$instance_href" \
+  volume_attachment[volume_href]="$volume_href" 2>&1)
 
 case "$api_result" in
   *"201 Created"*)
