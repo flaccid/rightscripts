@@ -114,8 +114,11 @@ btrfs)
 xfs)
   mkfs_cmd='mkfs.xfs -f -n ftype=1'
   ;;
-*)
+ext4)
   mkfs_cmd='mkfs.ext4'
+  ;;
+*)
+  mkfs_cmd="mkfs.$DOCKER_DIR_VOLUME_FSTYPE"
   ;;
 esac
 sudo $mkfs_cmd "$DOCKER_DIR_BLOCK_DEVICE"
