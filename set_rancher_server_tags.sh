@@ -43,6 +43,7 @@ if [ "$RANCHER_SERVER_SET_ACCOUNT_KEYPAIR_TAG" = 'true' ]; then
   if ! type jq > /dev/null 2>&1; then
     echo 'Installing jq...'
     compgen -G "/etc/profile.d/*proxy*" > /dev/null 2>&1 && source /etc/profile.d/*proxy* > /dev/null 2>&1
+
     curl -SsLk \
       --connect-timeout 5 \
       --max-time 30 \
@@ -50,18 +51,46 @@ if [ "$RANCHER_SERVER_SET_ACCOUNT_KEYPAIR_TAG" = 'true' ]; then
       --retry-delay 0 \
       --retry-max-time 120 \
         "https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64" | sudo tee /usr/local/bin/jq > /dev/null 2>&1
+
     sudo chmod +x /usr/local/bin/jq
+    echo "Successfully installed jq, printing version information..."
     /usr/local/bin/jq --version
   fi
 
   # create the keypair
-  api_result=$(curl "$rancher_url_local/$RANCHER_API_VERSION/apikey" \
-    -H 'content-type: application/json' \
-    -H 'accept: application/json' \
-    --data-binary '{"type":"apikey","accountId":"1a1","name":"RightScale-Global","description":"The global account API key for management by RightScale.","created":null,"kind":null,"removeTime":null,"removed":null,"uuid":null}' \
-    --compressed)
+  echo "Creating keypair by calling Rancher API"
+  retry_count=0
+  until [ "$retry_count" -ge "5" ]
+  do
+    set +e 2>/dev/null # Disable error checking to allow retries on curl
+    api_result=$(curl "$rancher_url_local/$RANCHER_API_VERSION/apikey" \
+      --connect-timeout 5 \
+      --max-time 30 \
+      --retry 10 \
+      --retry-delay 0 \
+      --retry-max-time 120 \
+      -H 'content-type: application/json' \
+      -H 'accept: application/json' \
+      --data-binary '{"type":"apikey","accountId":"1a1","name":"RightScale-Global","description":"The global account API key for management by RightScale.","created":null,"kind":null,"removeTime":null,"removed":null,"uuid":null}' \
+      --compressed )
+
+    curl_result=$?
+    set -e 2>/dev/null #Re-enable error checking
+
+    if [ $curl_result ]; then
+      echo "API call to rancher was successful"
+      echo "API Result: '$api_result'"
+      break
+    else
+      retry_count=$[$retry_count+1]
+      echo "Curl failed, the rancher server might still be starting. This is retry #$retry_count. Sleeping for 60 seconds before trying again."
+      sleep 60
+    fi
+  done
+
 
   # extract the key ID, public and secret values
+  echo "Extracting keypair details"
   keypair_id=$(echo "$api_result" | jq --raw-output '.id')
   public_value=$(echo "$api_result" | jq --raw-output '.publicValue')
   secret_value=$(echo "$api_result" | jq --raw-output '.secretValue')
