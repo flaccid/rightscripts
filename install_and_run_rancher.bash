@@ -11,7 +11,8 @@
 : "${RANCHER_DOCKER_CMD:=}"
 : "${RANCHER_TAG:=stable}"
 : "${RANCHER_CONTAINER_POST_CMDS:=}"
-: "${RANCHER_CONTAINER_SSH_PRIV_KEY}"
+: "${RANCHER_CONTAINER_SSH_PRIV_KEY:=}"
+: "${RANCHER_WAIT_FOR_SERVER:=}"
 
 [ ! -z "$RANCHER_CONTAINER_TIMEZONE" ] && RANCHER_DOCKER_OPTS="$RANCHER_DOCKER_OPTS -e TZ=$RANCHER_CONTAINER_TIMEZONE"
 
@@ -85,6 +86,37 @@ function run_post_cmds()
   sudo docker exec "$cid" rm /tmp/rancher-post.bash
 }
 
+function wait_for_server()
+{
+  # Wait for rancher API to be ready by polling ping endpoint
+  retry_count=0
+  echo "Validating that Rancher API is available at '$rancher_url_local/ping'"
+  while true
+  do
+    set +e 2>/dev/null # Disable error checking to allow retries on curl
+    ping_response=$(curl -Ss http://localhost/ping)
+    curl_return_code=$?
+    set -e 2>/dev/null
+
+    retry_count=$[$retry_count+1]
+
+    if [ "$ping_response" == 'pong' ]; then
+      echo "Successful Rancher API ping response. Continuing."
+      break
+    else
+      echo "Unexpected API ping response: '$ping_response'"
+    fi
+
+    if [ $retry_count -ge 20 ]; then
+      echo "Retried 20 times, aborting script"
+      exit
+    fi
+
+    echo "Sleeping for 30 seconds before retrying"
+    sleep 30
+  done
+}
+
 #---------------------------------------------------------------------------------------------------------------------------
 # MAIN
 #---------------------------------------------------------------------------------------------------------------------------
@@ -105,5 +137,7 @@ fi
 [ ! -z "$RANCHER_CONTAINER_SSH_PRIV_KEY" ] && inject_ssh_priv_key
 
 [ ! -z "$RANCHER_CONTAINER_POST_CMDS" ] && run_post_cmds
+
+[ "$RANCHER_WAIT_FOR_SERVER" = 'true' ] && wait_for_server
 
 echo 'Done.'
