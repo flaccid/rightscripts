@@ -80,7 +80,9 @@ if [ "$RANCHER_REGISTRATION_METHOD" = 'discovery' ]; then
   if [ ! -z "$RANCHER_REGISTRATION_ENVIRONMENT" ]; then
     project_id=$(rancher environment ls | grep "$RANCHER_REGISTRATION_ENVIRONMENT" | awk -F ' ' '{print $1}')
     # we currently assume that RANCHER_URL does not have a href with api version
-    export RANCHER_URL="$RANCHER_URL/v1/projects/$project_id"
+
+    # support if the RANCHER_URL has a trailing or no trailing forward slash
+    export RANCHER_URL="${RANCHER_URL%/}/v1/projects/$project_id"
   fi
 fi
 
