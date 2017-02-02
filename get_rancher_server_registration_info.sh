@@ -1,6 +1,7 @@
 #! /bin/bash -e
 
 # required inputs:
+# $RANCHER_API_VERSION
 # $RANCHER_URL
 # $RANCHER_ACCESS_KEY
 # $RANCHER_SECRET_KEY
@@ -8,6 +9,7 @@
 # $RANCHER_SERVER_IDENTIFIER
 # $RANCHER_REGISTRATION_ENVIRONMENT
 
+: "${RANCHER_API_VERSION:=v2-beta}"
 : "${RANCHER_REGISTRATION_METHOD:=manual}"
 : "${RANCHER_SERVER_IDENTIFIER:=default}"
 
@@ -82,7 +84,7 @@ if [ "$RANCHER_REGISTRATION_METHOD" = 'discovery' ]; then
     # we currently assume that RANCHER_URL does not have a href with api version
 
     # support if the RANCHER_URL has a trailing or no trailing forward slash
-    export RANCHER_URL="${RANCHER_URL%/}/v1/projects/$project_id"
+    export RANCHER_URL="${RANCHER_URL%/}/$RANCHER_API_VERSION/projects/$project_id"
   fi
 fi
 
