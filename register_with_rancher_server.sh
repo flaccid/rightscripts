@@ -61,12 +61,18 @@ fi
 
 proxies="$http_proxy $https_proxy $no_proxy"
 
+# support for a static host entry, rancher.localdomain
+if grep rancher.localdomain /etc/hosts > /dev/null 2>&1; then
+  add_host="--add-host rancher.localdomain:$(grep rancher.localdomain /etc/hosts | cut -d' ' -f1)"
+fi
+
 echo 'Running rancher/agent container.'
 
 set -x
 
 sudo docker run -d --privileged \
   -e CATTLE_AGENT_IP="${private_ip}" \
+  $add_host \
   $proxies \
   $cattle_labels \
   -v /var/run/docker.sock:/var/run/docker.sock "rancher/agent:$RANCHER_AGENT_TAG" \
