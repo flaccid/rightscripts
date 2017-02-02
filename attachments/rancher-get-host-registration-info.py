@@ -8,11 +8,11 @@ import urlparse
 from urlparse import urlparse
 from urlparse import urljoin
 
-RANCHER_API_VERSION = 1
+RANCHER_API_VERSION = 'v2-beta'
 
 # in case user has already provided the api version in the URL or a more specific URL
 if '/v' not in os.environ['RANCHER_URL']:
-    RANCHER_URL = urljoin(os.environ['RANCHER_URL'], '/v' + str(RANCHER_API_VERSION))
+    RANCHER_URL = urljoin(os.environ['RANCHER_URL'], '/' + RANCHER_API_VERSION)
 else:
     RANCHER_URL = os.environ['RANCHER_URL']
 
@@ -33,6 +33,10 @@ if 'projects' in RANCHER_URL:
     [token for token in registration_tokens if token["accountId"] == os.path.split(urlparse(RANCHER_URL).path)[-1]][0]
 else:
     token = registration_tokens[0]
+
+# debug
+# command = token['command']
+# print('registration command: ' + token['command'])
 
 registration_url = token['registrationUrl']
 registration_file = '/var/spool/rancher/registration.sh'
