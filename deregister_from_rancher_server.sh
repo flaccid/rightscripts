@@ -9,9 +9,9 @@ export RANCHER_URL
 export RANCHER_ACCESS_KEY
 export RANCHER_SECRET_KEY
 
-# exit if not terminating or stopping
-if ([ ! -z "$DECOM_REASON" ] && [ "$DECOM_REASON" != 'terminate' ] && [ "$DECOM_REASON" != 'stop' ]); then
-  echo 'server is not terminating or stopping, skipping.'
+# exit if not terminating, rebooting or stopping
+if ([ ! -z "$DECOM_REASON" ] && [ "$DECOM_REASON" != 'terminate' ] && [ "$DECOM_REASON" != 'stop' ] && [ "$DECOM_REASON" != 'reboot' ]); then
+  echo 'server is not terminating, rebooting or stopping, skipping.'
   exit 0
 fi
 
