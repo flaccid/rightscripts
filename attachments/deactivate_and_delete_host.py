@@ -11,13 +11,16 @@ import time
 # RANCHER_ACCESS_KEY
 # RANCHER_SECRET_KEY
 # RANCHER_HOST_HOSTNAME (optional, by default uses the hostname script is run on)
+# RANCHER_HOST_FQDN (optional)
 
 RANCHER_API_VERSION = 1
 
-if os.environ.has_key('RANCHER_HOST_HOSTNAME'):
+if os.environ.has_key('RANCHER_HOST_HOSTNAME') and os.environ.has_key('RANCHER_HOST_FQDN'):
     HOSTNAME = os.environ['RANCHER_HOST_HOSTNAME']
+    FQDN = os.environ['RANCHER_HOST_FQDN']
 else:
-    HOSTNAME = socket.gethostname()
+   HOSTNAME = socket.gethostname()
+   FQDN = socket.getfqdn()
 
 print('Hostname of host being removed: '+HOSTNAME)
 print('RANCHER_URL='+os.environ['RANCHER_URL'] + '/v' + str(RANCHER_API_VERSION))
@@ -39,9 +42,8 @@ print('Finding host...')
 #   hosts = client.list_host(hostname=HOSTNAME)
 hosts = client.list_host()
 print("%s hosts exist" % str(len(hosts)))
-
 # client side filter
-host = [e for e in hosts if e.get('hostname', None) == HOSTNAME]
+host = [e for e in hosts if e.get('hostname', None) in (HOSTNAME, FQDN)]
 
 if len(hosts) > 0:
     print("Found Rancher host '%s' (%s)" % (host[0]['hostname'], host[0]['id']))
@@ -65,9 +67,9 @@ while client.by_id_host(host_id).state != "purged":
     elif 'purge' in client.by_id_host(host_id).actions:
         print('Purging host....')
         client.by_id_host(host_id).purge()
-    
+
     time.sleep(3)
-    
+
     print('Current host state is: %s' % client.by_id_host(host_id).state)
 
     if time.time() > timeout:
