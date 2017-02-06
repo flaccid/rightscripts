@@ -22,6 +22,8 @@ export RANCHER_ACCESS_KEY
 export RANCHER_SECRET_KEY
 
 # source proxy settings if needed
+# https://github.com/koalaman/shellcheck/wiki/SC1090
+# shellcheck source=/dev/null
 source /etc/profile.d/*proxy* > /dev/null 2>&1 || true
 
 # if using discovery registration, update fstab first
@@ -29,7 +31,6 @@ if [ "$RANCHER_REGISTRATION_METHOD" = 'discovery' ]; then
   # if jq is not installed, lets install the linux binary
   if ! type jq > /dev/null 2>&1; then
     echo 'Installing jq...'
-    source /etc/profile.d/*proxy* > /dev/null 2>&1 || true
     curl -SsLk "https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64" | sudo tee /usr/local/bin/jq > /dev/null 2>&1
     sudo chmod +x /usr/local/bin/jq
     /usr/local/bin/jq --version
@@ -61,7 +62,7 @@ if [ "$RANCHER_REGISTRATION_METHOD" = 'discovery' ]; then
   rancher_instance_tags=$(sudo /usr/local/bin/rsc cm15 --rl10 by_resource /api/tags/by_resource \
     "resource_hrefs[]=$rancher_instance_href" --pp)
 
-  rancher_server_proto=$(echo "$rancher_instance_tags" | jq --raw-output '.[][][] | select(.name | index("rancher:proto")) .name' | cut -d = -f 2)
+  # get the hostname of the rancher server
   rancher_server_hostname=$(echo "$rancher_instance_tags" | jq --raw-output '.[][][] | select(.name | index("rancher:endpoint_host")) .name' | cut -d = -f 2)
 
   # update fstab
@@ -80,7 +81,7 @@ if [ "$RANCHER_REGISTRATION_METHOD" = 'discovery' ]; then
 
   # if RANCHER_REGISTRATION_ENVIRONMENT is set; lets update the RANCHER_URL to be project-specific
   if [ ! -z "$RANCHER_REGISTRATION_ENVIRONMENT" ]; then
-    project_id=$(rancher environment ls | grep "$RANCHER_REGISTRATION_ENVIRONMENT" | awk -F ' ' '{print $1}')
+    project_id=$(rancher environment ls | grep "$RANCHER_REGISTRATION_ENVIRONMENT" | awk -F ' ' '{print $1}' | head -n1)
     # we currently assume that RANCHER_URL does not have a href with api version
 
     # support if the RANCHER_URL has a trailing or no trailing forward slash
