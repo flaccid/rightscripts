@@ -11,5 +11,8 @@ client = cattle.Client(url=os.environ['RANCHER_URL'] + '/v' + str(RANCHER_API_VE
                        secret_key=os.environ['RANCHER_SECRET_KEY'])
 
 for stack in client.list_environment():
-    print("Deleting stack '%s'" % stack['name'])
-    client.delete(stack)
+    if stack['system'] is True:
+        print("Skipping system stack '%s'" % stack['name'])
+    else:
+        print("Deleting stack '%s'" % stack['name'])
+        client.delete(stack)
