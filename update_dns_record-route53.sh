@@ -138,14 +138,13 @@ function check_iam_creds()
     iam_url='http://169.254.169.254/latest/meta-data/iam/security-credentials/'
     return_code=`curl -silent -I ${iam_url} | head -n 1 | cut -d" " -f2`
 
-    if [ -z "$return_code" ];
-    then
-        echo "This server does not have any IAM credentials, will use user supplied creds."
+    if [ "$return_code" = '200' ]; then
+      echo "The server has IAM credentials, unsetting variables AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY."
+      echo "The AWS SDK should pick up creds from the metadata."
+      unset AWS_ACCESS_KEY_ID
+      unset AWS_SECRET_ACCESS_KEY
     else
-        echo "The server has IAM credentials, unsetting variables AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY."
-        echo "The AWS SDK should pick up creds from the metadata."
-        unset AWS_ACCESS_KEY_ID
-        unset AWS_SECRET_ACCESS_KEY
+      echo "This server does not have any IAM credentials, will use user supplied creds."
     fi
 }
 
