@@ -10,16 +10,12 @@ from requests.auth import HTTPBasicAuth
 from urlparse import urljoin
 from urlparse import urlparse
 
-RANCHER_DEBUG = False
+PROJECT_ID = None
 RANCHER_API_VERSION = 'v2-beta'
+DEBUG = False
 
-if 'RANCHER_DEBUG' in os.environ:
-    if os.environ['RANCHER_DEBUG'] == '1':
-        DEBUG = True
-    else:
-        DEBUG = False
-else:
-    DEBUG = False
+if 'RANCHER_DEBUG' in os.environ and os.environ['RANCHER_DEBUG'] == '1':
+    DEBUG = True
 
 # if project is specified (includes api version) split out components
 # otherwise construct URL with api version (if needed)
@@ -37,24 +33,21 @@ else:
     if '/v' in os.environ['RANCHER_URL']:
         RANCHER_URL = os.environ['RANCHER_URL']
     else:
-        urljoin(os.environ['RANCHER_URL'], '/' + RANCHER_API_VERSION)
+        RANCHER_URL = urljoin(os.environ['RANCHER_URL'], '/' + RANCHER_API_VERSION)
 
 print('RANCHER_URL: ' + RANCHER_URL)
-
-if PROJECT_ID:
-    print('PROJECT_ID: ' + PROJECT_ID)
-
 print('RANCHER_ACCESS_KEY: ' + os.environ['RANCHER_ACCESS_KEY'])
 
 client = cattle.Client(url=RANCHER_URL,
                        access_key=os.environ['RANCHER_ACCESS_KEY'],
                        secret_key=os.environ['RANCHER_SECRET_KEY'])
 
-# get the token for the specific project, otherwise first returned
-if PROJECT_ID:
-    found_token = False
-    registration_tokens = client.list_registrationToken()
+registration_tokens = client.list_registrationToken()
+found_token = False
 
+# get the token for the specific project, otherwise first returned
+if 'PROJECT_ID' in locals() and PROJECT_ID is not None:
+    print('PROJECT_ID: ' + PROJECT_ID)
     if DEBUG:
         print('Registration tokens returned: ' + str(registration_tokens))
 
