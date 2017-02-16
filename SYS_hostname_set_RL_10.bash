@@ -66,17 +66,15 @@ else
   echo "No suffix found, not appending anything."
 fi
 
-# append domain name
-HOSTNAME="$HOSTNAME.$DOMAINNAME"
+# append domain name and make it a fully qualified domain name
+FQDN="$HOSTNAME.$DOMAINNAME"
 
-short_hostname=$(echo $HOSTNAME | cut -d'.' -f1)
-
-echo "setting hostname to $HOSTNAME ($short_hostname)"
+echo "setting hostname to $FQDN ($HOSTNAME)"
 
 # Set hostname & hostname-file (so it'll stick even after a DHCP update)
-sudo hostname $HOSTNAME
+sudo hostname $FQDN
 # https://www.freedesktop.org/software/systemd/man/hostname.html (should not contain dots, so short hostname only)
-echo "$short_hostname" | sudo tee /etc/hostname
+echo "$HOSTNAME" | sudo tee /etc/hostname
 
 # ensure valid localhost entry
 sudo sed -i "s%^127.0.0.1.*%127.0.0.1 localhost.localdomain localhost%" /etc/hosts
@@ -84,16 +82,16 @@ sudo sed -i "s%^127.0.0.1.*%127.0.0.1 localhost.localdomain localhost%" /etc/hos
 # get the ip address from eth0
 ip_addr="$(ip addr | grep 'scope global eth0' | awk '{print $2}' | cut -f1 -d'/')" || true
 
-if host "$HOSTNAME"; then
+if host "$FQDN"; then
   if [ ! -z "$ip_addr" ]; then
     if grep "$ip_addr" /etc/hosts; then
-      sudo sed -i "s%^$ip_addr.*%$ip_addr $HOSTNAME $short_hostname%" /etc/hosts
+      sudo sed -i "s%^$ip_addr.*%$ip_addr $FQDN $HOSTNAME%" /etc/hosts
     else
-      echo "$ip_addr    $HOSTNAME $short_hostname" | sudo tee -a /etc/hosts
+      echo "$ip_addr    $FQDN $HOSTNAME" | sudo tee -a /etc/hosts
     fi
   fi
 else
-  sudo sed -i "s%^127.0.0.1.*%127.0.0.1 localhost.localdomain localhost $HOSTNAME $short_hostname%" /etc/hosts
+  sudo sed "s%^$ip_addr.*%$ip_addr $FQDN $HOSTNAME%" /etc/hosts
 fi
 
 echo 'Done.'
