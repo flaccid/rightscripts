@@ -1,4 +1,5 @@
 #!/bin/bash -e
+
 # Copyright (c) 2015 RightScale, Inc.
 #
 # Permission is hereby granted, free of charge, to any person obtaining
@@ -24,6 +25,7 @@
 # $HOSTNAME
 # $DOMAINNAME
 
+# shellcheck source=/dev/null
 source "$RS_ATTACH_DIR/rs_distro.sh"
 
 # we need the host command
@@ -38,11 +40,11 @@ HOSTNAME=$(echo $HOSTNAME | tr "[:upper:]" "[:lower:]")
 # Check for a numeric suffix (like in a server array)
 # example:  array name #1
 #
-if [ $( echo $HOSTNAME | grep "#" -c ) -gt 0 ]; then
-  numeric_suffix=$( echo $HOSTNAME | cut -d'#' -f2 )
+if [ "$(echo $HOSTNAME | grep '#' -c )" -gt 0 ]; then
+  numeric_suffix=$(echo $HOSTNAME | cut -d'#' -f2)
 else
   # no suffix
-  numeric_suffix=""
+  numeric_suffix=''
 fi
 
 # Strip off a leading "-"'s or leading whitespace, if there is any.
@@ -67,12 +69,12 @@ else
 fi
 
 # append domain name and make it a fully qualified domain name
-FQDN="$HOSTNAME.$DOMAINNAME"
+fqdn="$HOSTNAME.$DOMAINNAME"
 
-echo "setting hostname to $FQDN ($HOSTNAME)"
+echo "setting hostname to $fqdn ($HOSTNAME)"
 
 # Set hostname & hostname-file (so it'll stick even after a DHCP update)
-sudo hostname $FQDN
+sudo hostname "$fqdn"
 # https://www.freedesktop.org/software/systemd/man/hostname.html (should not contain dots, so short hostname only)
 echo "$HOSTNAME" | sudo tee /etc/hostname
 
@@ -82,16 +84,16 @@ sudo sed -i "s%^127.0.0.1.*%127.0.0.1 localhost.localdomain localhost%" /etc/hos
 # get the ip address from eth0
 ip_addr="$(ip addr | grep 'scope global eth0' | awk '{print $2}' | cut -f1 -d'/')" || true
 
-if host "$FQDN"; then
+if host "$fqdn"; then
   if [ ! -z "$ip_addr" ]; then
     if grep "$ip_addr" /etc/hosts; then
-      sudo sed -i "s%^$ip_addr.*%$ip_addr $FQDN $HOSTNAME%" /etc/hosts
+      sudo sed -i "s%^$ip_addr.*%$ip_addr $fqdn $HOSTNAME%" /etc/hosts
     else
-      echo "$ip_addr    $FQDN $HOSTNAME" | sudo tee -a /etc/hosts
+      echo "$ip_addr    $fqdn $HOSTNAME" | sudo tee -a /etc/hosts
     fi
   fi
 else
-  sudo sed "s%^$ip_addr.*%$ip_addr $FQDN $HOSTNAME%" /etc/hosts
+  sudo sed "s%^$ip_addr.*%$ip_addr $fqdn $HOSTNAME%" /etc/hosts
 fi
 
 echo 'Done.'
