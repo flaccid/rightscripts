@@ -84,16 +84,12 @@ sudo sed -i "s%^127.0.0.1.*%127.0.0.1 localhost.localdomain localhost%" /etc/hos
 # get the ip address from eth0
 ip_addr="$(ip addr | grep 'scope global eth0' | awk '{print $2}' | cut -f1 -d'/')" || true
 
-if host "$fqdn"; then
-  if [ ! -z "$ip_addr" ]; then
-    if grep "$ip_addr" /etc/hosts; then
-      sudo sed -i "s%^$ip_addr.*%$ip_addr $fqdn $HOSTNAME%" /etc/hosts
-    else
-      echo "$ip_addr    $fqdn $HOSTNAME" | sudo tee -a /etc/hosts
-    fi
+if [ ! -z "$ip_addr" ]; then
+  if grep "$ip_addr" /etc/hosts; then
+    sudo sed -i "s%^$ip_addr.*%$ip_addr $fqdn $HOSTNAME%" /etc/hosts
+  else
+    echo "$ip_addr    $fqdn $HOSTNAME" | sudo tee -a /etc/hosts
   fi
-else
-  sudo sed "s%^$ip_addr.*%$ip_addr $fqdn $HOSTNAME%" /etc/hosts
 fi
 
 echo 'Done.'
