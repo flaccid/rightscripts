@@ -180,6 +180,24 @@ EOF
   sudo systemctl show docker --property Environment
 }
 
+set_docker_log_opts_systemd(){
+  ## Extra config for limiting log file sizes for containers 
+  if [[ ! -z "$DOCKER_LOG_OPT_MAX_SIZE" ]]; then
+  sudo mkdir -p /etc/systemd/system/docker.service.d
+  sudo tee /etc/systemd/system/docker.service.d/docker.conf > /dev/null <<EOF
+ExecStart=
+ExecStart=/usr/bin/docker daemon -H fd:// --log-driver=json-file --log-opt max-size=$DOCKER_LOG_OPT_MAX_SIZE
+EOF  
+  fi
+  
+  sudo systemctl daemon-reload
+
+  docker_service start
+
+  echo 'Verifying config:'
+  sudo systemctl show docker --property ExecStart
+}
+
 docker_rs_users() {
   if grep rightlink /etc/passwd; then
     sudo usermod -aG docker rightlink
@@ -219,6 +237,8 @@ if [[ ! -z "$DOCKER_HTTP_PROXY" ]] || [[ ! -z "$DOCKER_HTTPS_PROXY" ]] || [[ ! -
   if type systemctl >/dev/null 2>&1 && [ -e /lib/systemd/system/docker.service ]; then
     echo 'Setting proxy for systemd'
     set_docker_proxy_systemd
+    echo 'Setting log options for systemd'
+    set_docker_log_opts_systemd
   elif [ -e /etc/default/docker ]; then
     echo 'Setting proxy for docker'
     set_docker_proxy_sysv
