@@ -26,11 +26,9 @@ echo "Querying instance self..."
 instance_href=$(sudo /usr/local/bin/rsc --rl10 cm15 --x1 ':has(.rel:val("self")).href' index_instance_session /api/sessions/instance)
 server_href=$(sudo /usr/local/bin/rsc --rl10 --pp cm15 show --x1 ':has(.rel:val("parent")).href' "$instance_href")
 cloud_href=$(sudo /usr/local/bin/rsc --rl10 cm15 show "$instance_href" view=extended --x1 ':has(.rel:val("cloud")).href')
-datacenter_href=$(sudo /usr/local/bin/rsc --rl10 cm15 show "$instance_href" view=extended --x1 ':has(.rel:val("datacenter")).href')
 echo "cloud href:      $cloud_href"
 echo "instance href:   $instance_href"
 echo "server href:     $server_href"
-echo "datacenter href: $datacenter_href"
 
 cloud_id=$(basename "$cloud_href")
 
