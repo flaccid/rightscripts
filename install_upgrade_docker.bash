@@ -92,19 +92,15 @@ install_docker() {
   set_daemon_json
 
   echo 'Installing docker...'
-  if [ ! -z "$DOCKER_VERSION" ]; then
-    curl -Ss https://get.docker.com/ > /tmp/install.docker.sh
-    chmod +x /tmp/install.docker.sh
-
-    # replace the package name with docker-engine
-    sed -i -e "s/apt-get install -y -q docker-engine/apt-get install -y -q docker-engine=$DOCKER_VERSION/" /tmp/install.docker.sh
-    sed -i -e "s/yum -y -q install docker-engine/yum -y -q install docker-engine-$DOCKER_VERSION/" /tmp/install.docker.sh
-    sed -i -e "s/dnf -y -q install docker-engine/dnf -y -q install docker-engine-$DOCKER_VERSION/" /tmp/install.docker.sh
-
-    /tmp/install.docker.sh
+  if [ -z "$DOCKER_VERSION" ]; then
+    installer_url='https://get.docker.com'
   else
-    sudo wget -qO- https://get.docker.com/ | sh
+    # use Rancher Labs' version of the script (documented on http://rancher.com/docs/rancher/v1.6/en/hosts/)
+    installer_url="https://releases.rancher.com/install-docker/$DOCKER_VERSION.sh"
   fi
+  echo "using $installer_url"
+  curl -fsSL "$installer_url" > /tmp/install.docker.sh
+  chmod +x /tmp/install.docker.sh && /tmp/install.docker.sh
 }
 
 remove_docker() {
