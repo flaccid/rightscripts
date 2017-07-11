@@ -94,7 +94,7 @@ function wait_for_server()
   while true
   do
     set +e 2>/dev/null # Disable error checking to allow retries on curl
-    ping_response=$(curl -Ss http://localhost/ping)
+    ping_response=$(no_proxy=127.0.0.1,localhost curl -Ss http://localhost/ping)
     curl_return_code=$?
     set -e 2>/dev/null
 
