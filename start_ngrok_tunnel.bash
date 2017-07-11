@@ -61,7 +61,7 @@ if [ "$NGROK_NOHUP_BACKGROUNDED" = 'true' ]; then
     echo 'last 50 lines of log:'
     tail -n 50 "$NGROK_LOG_FILE"
 
-    ngrok_tunnels=$(curl -Ss http://127.0.0.1:4040/api/tunnels)
+    ngrok_tunnels=$(no_proxy=127.0.0.1 curl -Ss http://127.0.0.1:4040/api/tunnels)
 
     echo "$ngrok_tunnels"
 else
