@@ -14,6 +14,18 @@ PROJECT_ID = None
 RANCHER_API_VERSION = 'v2-beta'
 DEBUG = False
 
+# create the registration token for the project/environment
+# we do this with python-requests because cattle doesn't seem to
+# expose a method for creation of a registrationToken
+def create_registration_token():
+    print('POST: ' + PROJECT_URL + '/registrationtoken')
+    r = requests.post(RANCHER_URL + '/registrationtoken',
+                  data={'type': 'registrationToken'},
+                  auth=HTTPBasicAuth(os.environ['RANCHER_ACCESS_KEY'],
+                                     os.environ['RANCHER_SECRET_KEY']))
+    time.sleep(2)
+    registration_tokens = client.list_registrationToken()
+
 if 'RANCHER_DEBUG' in os.environ and os.environ['RANCHER_DEBUG'] == '1':
     DEBUG = True
 
@@ -58,28 +70,17 @@ if 'PROJECT_ID' in locals() and PROJECT_ID is not None:
 
     if not found_token:
         print('No registration token found, creating one')
-        print('POST: ' + PROJECT_URL + '/registrationtoken')
-        # create the registration token for the project/environment
-        # we do this with python-requests because cattle doesn't seem to
-        # expose a method for creation of a registrationToken
-        r = requests.post(PROJECT_URL + '/registrationtoken',
-                          data={'type': 'registrationToken'},
-                          auth=HTTPBasicAuth(os.environ['RANCHER_ACCESS_KEY'],
-                                             os.environ['RANCHER_SECRET_KEY']))
-        time.sleep(2)
-        registration_tokens = client.list_registrationToken()
+        create_registration_token()
+
         for t in registration_tokens:
             if t['accountId'] == PROJECT_ID:
                 found_token = True
                 token = t
 else:
     if len(registration_tokens) == 0:
-        r = requests.post(RANCHER_URL + '/registrationtoken',
-                      data={'type': 'registrationToken'},
-                      auth=HTTPBasicAuth(os.environ['RANCHER_ACCESS_KEY'],
-                                         os.environ['RANCHER_SECRET_KEY']))
-        time.sleep(2)
-        registration_tokens = client.list_registrationToken()
+        print('No registration token found, creating one')
+        create_registration_token()
+
     print('No specific project ID provided, using first returned')
     token = registration_tokens[0]
 
