@@ -73,6 +73,13 @@ if 'PROJECT_ID' in locals() and PROJECT_ID is not None:
                 found_token = True
                 token = t
 else:
+    if len(registration_tokens) == 0:
+        r = requests.post(RANCHER_URL + '/registrationtoken',
+                      data={'type': 'registrationToken'},
+                      auth=HTTPBasicAuth(os.environ['RANCHER_ACCESS_KEY'],
+                                         os.environ['RANCHER_SECRET_KEY']))
+        time.sleep(2)
+        registration_tokens = client.list_registrationToken()
     print('No specific project ID provided, using first returned')
     token = registration_tokens[0]
 
