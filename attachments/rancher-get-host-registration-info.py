@@ -18,7 +18,7 @@ DEBUG = False
 # create the registration token for the project/environment
 # we do this with python-requests because cattle doesn't seem to
 # expose a method for creation of a registrationToken
-def create_registration_token():
+def create_registration_token(PROJECT_URL):
     if not PROJECT_URL:
         PROJECT_URL = RANCHER_URL
     print('POST: ' + PROJECT_URL + '/registrationtoken')
@@ -28,6 +28,7 @@ def create_registration_token():
                                      os.environ['RANCHER_SECRET_KEY']))
     time.sleep(2)
     registration_tokens = client.list_registrationToken()
+    return registration_tokens
 
 if 'RANCHER_DEBUG' in os.environ and os.environ['RANCHER_DEBUG'] == '1':
     DEBUG = True
@@ -73,7 +74,7 @@ if 'PROJECT_ID' in locals() and PROJECT_ID is not None:
 
     if not found_token:
         print('No registration token found, creating one')
-        create_registration_token()
+        registration_tokens = create_registration_token(PROJECT_URL)
 
         for t in registration_tokens:
             if t['accountId'] == PROJECT_ID:
@@ -82,7 +83,7 @@ if 'PROJECT_ID' in locals() and PROJECT_ID is not None:
 else:
     if len(registration_tokens) == 0:
         print('No registration token found, creating one')
-        create_registration_token()
+        registration_tokens = create_registration_token(PROJECT_URL)
 
     print('No specific project ID provided, using first returned')
     token = registration_tokens[0]
