@@ -19,7 +19,7 @@ fi
 : "${DOCKER_DIR_BLOCK_DEVICE:=/dev/sdc}"
 : "${DOCKER_DIR_INITIALISE:=true}"
 : "${DOCKER_DIR_VOLUME_SIZE:=10}"
-: "${DOCKER_DIR_VOLUME_NAME:=`hostname`-dockerdata}"
+: "${DOCKER_DIR_VOLUME_NAME:=`hostname`-`date | md5sum | head -c 5`-dockerdata}"
 : "${DOCKER_DIR_VOLUME_FSTYPE:=btrfs}"
 : "${DOCKER_DIR_VOLUME_PROTECTION:=false}"
 : "${DOCKER_DIR_SAS_DEVICE:=}"
