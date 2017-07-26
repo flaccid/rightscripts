@@ -11,6 +11,7 @@ from urlparse import urljoin
 from urlparse import urlparse
 
 PROJECT_ID = None
+PROJECT_URL = None
 RANCHER_API_VERSION = 'v2-beta'
 DEBUG = False
 
@@ -18,8 +19,10 @@ DEBUG = False
 # we do this with python-requests because cattle doesn't seem to
 # expose a method for creation of a registrationToken
 def create_registration_token():
+    if not PROJECT_URL:
+        PROJECT_URL = RANCHER_URL
     print('POST: ' + PROJECT_URL + '/registrationtoken')
-    r = requests.post(RANCHER_URL + '/registrationtoken',
+    r = requests.post(PROJECT_URL + '/registrationtoken',
                   data={'type': 'registrationToken'},
                   auth=HTTPBasicAuth(os.environ['RANCHER_ACCESS_KEY'],
                                      os.environ['RANCHER_SECRET_KEY']))
