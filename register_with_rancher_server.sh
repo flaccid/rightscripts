@@ -7,6 +7,7 @@
 # $CATTLE_HOST_LABELS
 # $RANCHER_AGENT_TAG
 
+: "${RANCHER_AGENT_REMOVE_STATE:=false}"
 : "${RANCHER_HOST_EXTERNAL_DNS_IP:=}"
 
 # export proxy if on system level
@@ -18,8 +19,12 @@ export no_proxy
 # https://github.com/rancher/rancher/issues/1370
 # Note that due this bug you may need to action the following if
 # receiving 401 Unauthorized we a previously registered host:
-sudo rm -Rf /var/lib/rancher/state
+if [ "$RANCHER_AGENT_REMOVE_STATE" = 'true' ]; then
+  sudo rm -Rf /var/lib/rancher/state
+fi
 
+# currently, we keep this fairly old so auto rancher-agent upgrades
+# should always bump up easily to the required version according to the server
 : "${RANCHER_AGENT_TAG:=v1.0.2}"
 
 # currently we assume the device name will always reside in the 5th column
@@ -59,6 +64,10 @@ if [ ! -z $no_proxy ]; then
   no_proxy="-e NO_PROXY=$no_proxy -e no_proxy=$no_proxy"
 fi
 
+# this used to be used in the docker run command below but is not
+# required for the rancher-agent and infra services in modern times
+# http://rancher.com/docs/rancher/v1.6/en/hosts/custom/#hosts-behind-a-proxy
+# make sure your dockerd is configured properly for a forward proxy (if needed)
 proxies="$http_proxy $https_proxy $no_proxy"
 
 # support for a static host entry, rancher.localdomain
@@ -70,13 +79,15 @@ echo 'Running rancher/agent container.'
 
 set -x
 
-sudo docker run -d --privileged \
+sudo docker run \
+  --rm --privileged \
   -e CATTLE_AGENT_IP="${private_ip}" \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v /var/lib/rancher:/var/lib/rancher \
   $add_host \
-  $proxies \
   $cattle_labels \
-  -v /var/run/docker.sock:/var/run/docker.sock "rancher/agent:$RANCHER_AGENT_TAG" \
-  "$CATTLE_URL/scripts/$CATTLE_REGISTRATION_SECRET_KEY"
+    "rancher/agent:$RANCHER_AGENT_TAG" \
+    "$CATTLE_URL/scripts/$CATTLE_REGISTRATION_SECRET_KEY"
 
 { set +x; } 2>/dev/null
 
