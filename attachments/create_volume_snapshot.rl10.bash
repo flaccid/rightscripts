@@ -1,5 +1,7 @@
 #! /bin/bash -e
 
+: "${SNAPSHOT_FSFREEZE_MOUNTPOINT:=}"
+
 if [ -z "$1" ]; then
   echo "Please provide a volume lineage name to snapshot."
   exit 1
@@ -48,17 +50,41 @@ do
   fi
 done
 
+if [ ! -z "$SNAPSHOT_FSFREEZE_MOUNTPOINT" ]; then
+  echo "freezing mountpoint $SNAPSHOT_FSFREEZE_MOUNTPOINT"
+  fsfreeze -f "$SNAPSHOT_FSFREEZE_MOUNTPOINT"
+fi
+
 if [ "$volfound" -eq 1 ]; then
   echo 'Volume found.'
   echo "$vol"
   echo 'Taking snapshot.'
-  sudo /usr/local/bin/rsc --rl10 cm15 create "/api/clouds/$cloud_id/volume_snapshots" \
+  api_result=$(sudo /usr/local/bin/rsc -v --rl10 cm15 create "/api/clouds/$cloud_id/volume_snapshots" \
     "volume_snapshot[name]=$lineage-$(date +%Y%m%d%H%M%S)" \
     "volume_snapshot[description]=Snapshot taken on $(hostname -f)" \
-    "volume_snapshot[parent_volume_href]=$href"
+    "volume_snapshot[parent_volume_href]=$href" 2>&1)
+  echo "$api_result"
+  snapshot_href=$(echo "$api_result" | grep Location | awk '{ print $2 }')
 else
   echo "No volume found attached to instance with name, '$lineage', exiting."
   exit 1
+fi
+
+if [ ! -z "$SNAPSHOT_FSFREEZE_MOUNTPOINT" ]; then
+  # currently we only wait for snapshot to complete when freezing
+  echo "waiting for $snapshot_href to complete"
+  state='not-ready'
+  i=1
+  while [ "$state" != 'available' ]; do
+    [ "$i" -gt 1800 ] && fsfreeze -u "$SNAPSHOT_FSFREEZE_MOUNTPOINT" && echo 'timeout waiting for snapshot to complete!' && exit 1
+    state=$(sudo /usr/local/bin/rsc --rl10 cm15 show $snapshot_href | jq -r .state | tr -d '[:space:]')
+    echo "(poll $i) $state..."
+    i=$((i + 1))
+    sleep 3
+  done
+  echo 'snapshot is now complete.'
+  echo "unfreezing mountpoint $SNAPSHOT_FSFREEZE_MOUNTPOINT"
+  fsfreeze -u "$SNAPSHOT_FSFREEZE_MOUNTPOINT"
 fi
 
 echo 'Snapshot creation complete.'

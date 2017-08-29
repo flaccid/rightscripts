@@ -16,6 +16,7 @@
 : "${CONTINUOUS_SNAPSHOT_LINEAGE_NAME:=}"
 : "${CONTINUOUS_SNAPSHOT_PRUNE_AGE:=672}"
 : "${CONTINUOUS_SNAPSHOT_CRON_USER:=rightlink}"
+: "${CONTINUOUS_SNAPSHOT_FSFREEZE_MOUNTPOINT:=}"
 
 # age is in hours
 # 1d = 24
@@ -35,7 +36,7 @@ sudo touch "/var/log/cron-snapshots-$CONTINUOUS_SNAPSHOT_LINEAGE_NAME.log"
 sudo chown "$CONTINUOUS_SNAPSHOT_CRON_USER" "/var/log/cron-snapshots-$CONTINUOUS_SNAPSHOT_LINEAGE_NAME.log"
 sudo chmod 660 "/var/log/cron-snapshots-$CONTINUOUS_SNAPSHOT_LINEAGE_NAME.log"
 
-job="$CONTINUOUS_SNAPSHOT_CRON_SCHEDULE    (/usr/local/bin/create_volume_snapshot.rl10.bash $CONTINUOUS_SNAPSHOT_LINEAGE_NAME; /usr/local/bin/prune_volume_snapshot_lineage.rl10.bash $CONTINUOUS_SNAPSHOT_LINEAGE_NAME $CONTINUOUS_SNAPSHOT_PRUNE_AGE) >> /var/log/cron-snapshots-$CONTINUOUS_SNAPSHOT_LINEAGE_NAME.log 2>&1"
+job="$CONTINUOUS_SNAPSHOT_CRON_SCHEDULE    (SNAPSHOT_FSFREEZE_MOUNTPOINT=$CONTINUOUS_SNAPSHOT_FSFREEZE_MOUNTPOINT /usr/local/bin/create_volume_snapshot.rl10.bash $CONTINUOUS_SNAPSHOT_LINEAGE_NAME; /usr/local/bin/prune_volume_snapshot_lineage.rl10.bash $CONTINUOUS_SNAPSHOT_LINEAGE_NAME $CONTINUOUS_SNAPSHOT_PRUNE_AGE) >> /var/log/cron-snapshots-$CONTINUOUS_SNAPSHOT_LINEAGE_NAME.log 2>&1"
 echo 'Cron job:'
 echo "$job"
 
