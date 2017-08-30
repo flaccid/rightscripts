@@ -10,6 +10,13 @@ fi
 # path sanity
 export PATH="$PATH:/usr/local/bin"
 
+freeze(){
+  echo "freezing mountpoint $1" && fsfreeze -f "$1"
+}
+unfreeze(){
+  echo "un-freezing mountpoint $1" && fsfreeze -u "$1"
+}
+
 volfound=0
 lineage="$1"
 
@@ -50,14 +57,13 @@ do
   fi
 done
 
-if [ ! -z "$SNAPSHOT_FSFREEZE_MOUNTPOINT" ]; then
-  echo "freezing mountpoint $SNAPSHOT_FSFREEZE_MOUNTPOINT"
-  fsfreeze -f "$SNAPSHOT_FSFREEZE_MOUNTPOINT"
-fi
-
 if [ "$volfound" -eq 1 ]; then
   echo 'Volume found.'
   echo "$vol"
+
+  # freeze the mountpoint if specified
+  [ ! -z "$SNAPSHOT_FSFREEZE_MOUNTPOINT" ] && freeze "$SNAPSHOT_FSFREEZE_MOUNTPOINT"
+
   echo 'Taking snapshot.'
   api_result=$(sudo /usr/local/bin/rsc -v --rl10 cm15 create "/api/clouds/$cloud_id/volume_snapshots" \
     "volume_snapshot[name]=$lineage-$(date +%Y%m%d%H%M%S)" \
@@ -76,18 +82,18 @@ if [ ! -z "$SNAPSHOT_FSFREEZE_MOUNTPOINT" ]; then
   state='not-ready'
   i=1
   while [ "$state" != 'available' ]; do
-    [ "$i" -gt 1800 ] && fsfreeze -u "$SNAPSHOT_FSFREEZE_MOUNTPOINT" && echo 'timeout waiting for snapshot to complete!' && exit 1
+    [ "$i" -gt 1800 ] && unfreeze "$SNAPSHOT_FSFREEZE_MOUNTPOINT" && echo 'timeout waiting for snapshot to complete!' && exit 1
     state=$(sudo /usr/local/bin/rsc --rl10 cm15 show $snapshot_href | jq -r .state | tr -d '[:space:]')
     echo "(poll $i) $state..."
     i=$((i + 1))
     sleep 3
   done
   echo 'snapshot is now complete.'
-  echo "unfreezing mountpoint $SNAPSHOT_FSFREEZE_MOUNTPOINT"
-  fsfreeze -u "$SNAPSHOT_FSFREEZE_MOUNTPOINT"
+  unfreeze "$SNAPSHOT_FSFREEZE_MOUNTPOINT"
 fi
 
-echo 'Snapshot creation complete.'
-echo "Finished on $(date)"
+echo 'snapshot creation complete'
+
+echo "Finished on $(date)."
 
 # end
