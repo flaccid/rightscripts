@@ -11,10 +11,10 @@ fi
 export PATH="$PATH:/usr/local/bin"
 
 freeze(){
-  echo "freezing mountpoint $1" && fsfreeze -f "$1"
+  echo "freezing mountpoint $1" && sudo fsfreeze -f "$1"
 }
 unfreeze(){
-  echo "un-freezing mountpoint $1" && fsfreeze -u "$1"
+  echo "un-freezing mountpoint $1" && sudo fsfreeze -u "$1"
 }
 
 volfound=0
